@@ -6,17 +6,26 @@ namespace dm.ffmods.combattweaks
     {
         #region Fields
 
-        // pref category for the mod
-        public static MelonPreferences_Category CombatTweaksPrefs;
-
         public static bool GuardsDropEquipment = true;
+
         public static bool HuntersDropEquipment = true;
+
         public static bool IsVerbose = false;
+
         public static uint MaxCatapultsPerRaidGroup = 0;
+
         public static uint MaxRamsPerRaidGroup = 0;
+
         public static uint MinCatapultsPerRaidGroup = 0;
+
         public static uint MinRamsPerRaidGroup = 0;
+
+        // pref category for the mod
+        public static MelonPreferences_Category RaidPrefs;
+
+        public static MelonPreferences_Category SetupPrefs;
         public static bool SoldiersDropEquipment = true;
+        public static MelonPreferences_Category VillagerPrefs;
         private MelonPreferences_Entry<bool> guardDropsEntry;
         private MelonPreferences_Entry<bool> hunterDropsEntry;
         private MelonPreferences_Entry<bool> isVerboseEntry;
@@ -32,19 +41,21 @@ namespace dm.ffmods.combattweaks
 
         public ConfigManager(string prefsPath)
         {
-            CombatTweaksPrefs = MelonPreferences.CreateCategory("CombatTweaks");
-            CombatTweaksPrefs.SetFilePath(prefsPath);
+            RaidPrefs = MelonPreferences.CreateCategory("RaidSettings");
+            RaidPrefs.SetFilePath(prefsPath);
+            SetupPrefs = MelonPreferences.CreateCategory("Setup");
+            SetupPrefs.SetFilePath(prefsPath);
+            VillagerPrefs = MelonPreferences.CreateCategory("VillagerSettings");
+            VillagerPrefs.SetFilePath(prefsPath);
 
-            var prefs = CombatTweaksPrefs;
-
-            isVerboseEntry = prefs.CreateEntry<bool>("verboseLogging", IsVerbose);
-            minCatapultsEntry = prefs.CreateEntry<uint>("MinCatapultsPerRaidGroup", MinCatapultsPerRaidGroup);
-            maxCatapultsEntry = prefs.CreateEntry<uint>("MaxCatapultsPerRaidGroup", MaxCatapultsPerRaidGroup);
-            minRamsEntry = prefs.CreateEntry<uint>("MinRamsPerRaidGroup", MinRamsPerRaidGroup);
-            maxRamsEntry = prefs.CreateEntry<uint>("MaxRamsPerRaidGroup", MaxRamsPerRaidGroup);
-            hunterDropsEntry = prefs.CreateEntry<bool>("HuntersDropEquipment", HuntersDropEquipment);
-            guardDropsEntry = prefs.CreateEntry<bool>("GuardsDropEquipment", GuardsDropEquipment);
-            soldierDropsEntry = prefs.CreateEntry<bool>("SoldiersDropEquipment", SoldiersDropEquipment);
+            isVerboseEntry = SetupPrefs.CreateEntry<bool>("verboseLogging", IsVerbose);
+            minCatapultsEntry = RaidPrefs.CreateEntry<uint>("MinCatapultsPerRaidGroup", MinCatapultsPerRaidGroup);
+            maxCatapultsEntry = RaidPrefs.CreateEntry<uint>("MaxCatapultsPerRaidGroup", MaxCatapultsPerRaidGroup);
+            minRamsEntry = RaidPrefs.CreateEntry<uint>("MinRamsPerRaidGroup", MinRamsPerRaidGroup);
+            maxRamsEntry = RaidPrefs.CreateEntry<uint>("MaxRamsPerRaidGroup", MaxRamsPerRaidGroup);
+            hunterDropsEntry = VillagerPrefs.CreateEntry<bool>("HuntersDropEquipment", HuntersDropEquipment);
+            guardDropsEntry = VillagerPrefs.CreateEntry<bool>("GuardsDropEquipment", GuardsDropEquipment);
+            soldierDropsEntry = VillagerPrefs.CreateEntry<bool>("SoldiersDropEquipment", SoldiersDropEquipment);
         }
 
         #endregion Public Constructors
