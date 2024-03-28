@@ -43,7 +43,7 @@ namespace dm.ffmods.combattweaks
         {
             RaidPrefs = MelonPreferences.CreateCategory("RaidSettings");
             RaidPrefs.SetFilePath(prefsPath);
-            SetupPrefs = MelonPreferences.CreateCategory("Setup");
+            SetupPrefs = MelonPreferences.CreateCategory("CombatTweaksSetup");
             SetupPrefs.SetFilePath(prefsPath);
             VillagerPrefs = MelonPreferences.CreateCategory("VillagerSettings");
             VillagerPrefs.SetFilePath(prefsPath);
