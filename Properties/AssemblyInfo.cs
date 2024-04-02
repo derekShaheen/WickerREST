@@ -1,5 +1,4 @@
-﻿using dm.ffmods.combattweaks;
-using MelonLoader;
+﻿using MelonLoader;
 
-[assembly: MelonInfo(typeof(CombatTweaksMelon), "CombatTweaks", "1.0.1", "DM")]
+[assembly: MelonInfo(typeof(SkRest.SkRest), "SkRESTClient", "1.0.0", "Skrip")]
 [assembly: MelonGame("Crate Entertainment", "Farthest Frontier")]
