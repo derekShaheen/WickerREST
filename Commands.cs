@@ -26,15 +26,50 @@ namespace SkRESTClient
         }
 
         [CommandHandler("/ping")]
-        public static void PingHttp(HttpListenerResponse response, string input = "")
+        public static void PingHttp(HttpListenerResponse response)
         {
-            SkRESTClient.Instance.LogResponse(response, "Pong!" + " '" + input + "'");
+            SkRESTClient.Instance.LogResponse(response, "Pong!");
+        }
+
+        [CommandHandler("/ping2")]
+        public static void PingHttp2(HttpListenerResponse response)
+        {
+            SkRESTClient.Instance.LogResponse(response, "Pong!");
+        }
+
+        [CommandHandler("/ping3")]
+        public static void PingHttp3(HttpListenerResponse response)
+        {
+            SkRESTClient.Instance.LogResponse(response, "Pong!");
+        }
+
+        [CommandHandler("/inputTest")]
+        public static void InputTestHTTP(HttpListenerResponse response, string input = "")
+        {
+            SkRESTClient.Instance.LogResponse(response, "Received:" + " '" + input + "'");
         }
 
         [GameVariable("GameManagerName")]
         public static string GetGameManagerName()
         {
-            if(GameManager.Instance != null)
+            if (GameManager.Instance != null)
+                return GameManager.Instance.name;
+
+            return "GameManager not found!";
+        }
+
+        [GameVariable("GameManagerName2")]
+        public static string GetGameManagerName2()
+        {
+            if (GameManager.Instance != null)
+                return GameManager.Instance.name;
+
+            return "GameManager not found!";
+        }
+        [GameVariable("GameManagerName3")]
+        public static string GetGameManagerName3()
+        {
+            if (GameManager.Instance != null)
                 return GameManager.Instance.name;
 
             return "GameManager not found!";

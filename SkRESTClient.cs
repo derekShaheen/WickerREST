@@ -319,7 +319,20 @@ namespace SkRESTClient
                                 if (method.ReturnType != typeof(void) && method.GetParameters().Length == 0)
                                 {
                                     Func<object> valueProvider = () => method.Invoke(null, null);
-                                    gameVariables.Add(attribute.VariableName, valueProvider);
+
+                                    // Handle duplicates by appending a counter to the variable name
+                                    var variableName = attribute.VariableName;
+                                    if (gameVariables.ContainsKey(variableName))
+                                    {
+                                        int counter = 2; // Start with 2 since the first instance has no number
+                                        var originalVariableName = variableName;
+                                        while (gameVariables.ContainsKey(variableName))
+                                        {
+                                            variableName = $"{originalVariableName}_{counter}";
+                                            counter++;
+                                        }
+                                    }
+                                    gameVariables.Add(variableName, valueProvider);
                                 }
                             }
                         }
@@ -329,7 +342,7 @@ namespace SkRESTClient
             catch (ReflectionTypeLoadException ex)
             {
                 // Handle loading errors if necessary
-                //LoggerInstance.Msg($"Error loading command handler: {ex.LoaderExceptions.FirstOrDefault()?.Message}");
+                //LoggerInstance.Msg($"Error discovering game variables: {ex.LoaderExceptions.FirstOrDefault()?.Message}");
             }
             return gameVariables;
         }
