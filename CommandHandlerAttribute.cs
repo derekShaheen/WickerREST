@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SkRest
+namespace SkRESTClient
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class CommandHandlerAttribute : Attribute
@@ -15,4 +15,16 @@ namespace SkRest
             Path = path;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public class GameVariableAttribute : Attribute
+    {
+        public string VariableName { get; }
+
+        public GameVariableAttribute(string variableName)
+        {
+            VariableName = variableName;
+        }
+    }
+
 }

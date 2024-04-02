@@ -8,8 +8,9 @@ using MelonLoader.Utils;
 using System.Collections;
 using System.Reflection;
 using Newtonsoft.Json;
+using System.Web;
 
-namespace SkRest
+namespace SkRESTClient
 {
     public static class BuildInfo
     {
@@ -22,7 +23,8 @@ namespace SkRest
 
     public class SkRESTClient : MelonMod
     {
-        private Dictionary<string, MethodInfo>? commandHandlers;
+        private Dictionary<string, (MethodInfo Method, string[] Parameters)>? commandHandlers;
+        private Dictionary<string, Func<object>>? gameVariableMethods;
 
         private HttpListener? listener;
         private Thread? listenerThread;
@@ -57,6 +59,7 @@ namespace SkRest
             var discoveryThread = new Thread(() =>
             {
                 commandHandlers = DiscoverCommandHandlers();
+                gameVariableMethods = DiscoverGameVariables();
                 OnCommandHandlersDiscovered(); // Notify complete
             });
             discoveryThread.Start();
@@ -111,11 +114,33 @@ namespace SkRest
 
                     try
                     {
-                        if (request.HttpMethod == "GET" && commandHandlers.TryGetValue(request.Url.AbsolutePath, out var handler))
+                        //LoggerInstance.Msg($"Request: {request.Url.AbsolutePath}");
+                        if (request.HttpMethod == "GET" && commandHandlers.TryGetValue(request.Url.AbsolutePath, out var handlerTuple))
                         {
+                            MethodInfo methodToInvoke = handlerTuple.Method;
+                            var parameterInfos = methodToInvoke.GetParameters();
+
+                            // Assuming all parameters are strings for simplicity; adjust as needed.
+                            object[] parameters = new object[parameterInfos.Length];
+
+                            // Parse query parameters
+                            var query = HttpUtility.ParseQueryString(request.Url.Query);
+                            parameters[0] = response; // Pass the response object
+                            if (parameterInfos.Length > 1)
+                            {
+                                for (int i = 1; i < parameterInfos.Length; i++)
+                                {
+                                    var paramInfo = parameterInfos[i];
+                                    var paramValue = query[paramInfo.Name];
+                                    // Convert paramValue to the correct type as needed
+                                    parameters[i] = Convert.ChangeType(paramValue, paramInfo.ParameterType);
+                                    // Log param info
+                                    LoggerInstance.Msg($"Parameter {paramInfo.Name}: {parameters[i]}");
+                                }
+                            }
                             MelonCoroutines.Start(ExecuteOnMainThread(() =>
                             {
-                                handler.Invoke(null, new object[] { response });
+                                methodToInvoke.Invoke(null, parameters);
                             }));
                         }
                         else if (request.Url.AbsolutePath == "/")
@@ -126,7 +151,14 @@ namespace SkRest
                         {
                             if (commandHandlers != null && commandHandlers.Count > 0)
                             {
-                                var commandsJson = JsonConvert.SerializeObject(new { commands = commandHandlers.Keys.ToArray() });
+                                var commandsInfo = commandHandlers.Select(handler => new {
+                                    Path = handler.Key,
+                                    Parameters = handler.Value.Method.GetParameters()
+                                                    .Select(p => new { p.Name, Type = p.ParameterType.Name })
+                                                    .ToArray()
+                                }).ToArray();
+
+                                var commandsJson = JsonConvert.SerializeObject(new { commands = commandsInfo });
                                 SendResponse(response, commandsJson, 200, "application/json");
                             }
                             else
@@ -134,6 +166,27 @@ namespace SkRest
                                 SendResponse(response, "No commands found.", 404);
                             }
                         }
+                        else if (request.Url.AbsolutePath == "/game-variables")
+                        {
+                            if (gameVariableMethods != null && gameVariableMethods.Count > 0)
+                            {
+
+                                var variableValues = gameVariableMethods.Select(kvp => new
+                                {
+                                    VariableName = kvp.Key,
+                                    Value = kvp.Value.Invoke().ToString()
+                                }).ToDictionary(kvp => kvp.VariableName, kvp => kvp.Value);
+
+                                var json = JsonConvert.SerializeObject(variableValues);
+                                //Log json output
+                                //LoggerInstance.Msg(json);
+                                SendResponse(response, json, 200, "application/json");
+                            } else
+                            {
+                                SendResponse(response, "No game variables found.", 200);
+                            }
+                        }
+
                         else
                         {
                             SendResponse(response, "Invalid request.", 404);
@@ -152,7 +205,7 @@ namespace SkRest
             {
                 if (ex is HttpListenerException || ex is ObjectDisposedException)
                 {
-                    //User is trying to close the server improperly. Handle on application close.
+                    //User is trying to close the server improperly. Handle on application quit.
                 }
             }
         }
@@ -185,7 +238,6 @@ namespace SkRest
             }
         }
 
-
         private IEnumerator ExecuteOnMainThread(Action action)
         {
             action.Invoke();
@@ -194,6 +246,10 @@ namespace SkRest
 
         public void SendResponse(HttpListenerResponse response, string message, int statusCode = 200, string contentType = "text/plain")
         {
+            response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.Headers.Add("Pragma", "no-cache");
+            response.Headers.Add("Expires", "0");
+            //
             response.StatusCode = statusCode;
             response.ContentType = contentType;
             var buffer = System.Text.Encoding.UTF8.GetBytes(message);
@@ -201,9 +257,9 @@ namespace SkRest
             response.OutputStream.Write(buffer, 0, buffer.Length);
         }
 
-        private Dictionary<string, MethodInfo> DiscoverCommandHandlers()
+        private Dictionary<string, (MethodInfo Method, string[] Parameters)> DiscoverCommandHandlers()
         {
-            var handlers = new Dictionary<string, MethodInfo>();
+            var handlers = new Dictionary<string, (MethodInfo, string[])>();
             try
             {
                 foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
@@ -227,7 +283,12 @@ namespace SkRest
                                         counter++;
                                     }
                                 }
-                                handlers[path] = method;
+                                var parameterInfos = method.GetParameters();
+                                var parameters = parameterInfos
+                                                    .Where(param => param.ParameterType != typeof(HttpListenerResponse))
+                                                    .Select(param => param.Name)
+                                                    .ToArray();
+                                handlers[attribute.Path] = (method, parameters);
                             }
                         }
                     }
@@ -241,7 +302,40 @@ namespace SkRest
             return handlers;
         }
 
-        public void OnCommandHandlersDiscovered()
+        private Dictionary<string, Func<object>> DiscoverGameVariables()
+        {
+            var gameVariables = new Dictionary<string, Func<object>>();
+            try
+            {
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    foreach (var type in assembly.GetTypes())
+                    {
+                        foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+                        {
+                            var attribute = method.GetCustomAttribute<GameVariableAttribute>();
+                            if (attribute != null)
+                            {
+                                if (method.ReturnType != typeof(void) && method.GetParameters().Length == 0)
+                                {
+                                    Func<object> valueProvider = () => method.Invoke(null, null);
+                                    gameVariables.Add(attribute.VariableName, valueProvider);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                // Handle loading errors if necessary
+                //LoggerInstance.Msg($"Error loading command handler: {ex.LoaderExceptions.FirstOrDefault()?.Message}");
+            }
+            return gameVariables;
+        }
+
+
+        private void OnCommandHandlersDiscovered()
         {
             if (commandHandlers == null || commandHandlers.Count == 0)
             {
@@ -251,6 +345,20 @@ namespace SkRest
             {
                 LoggerInstance.Msg($"Discovered {commandHandlers.Count} command handlers.");
             }
+            if (gameVariableMethods == null || gameVariableMethods.Count == 0)
+            {
+                LoggerInstance.Msg("No variable monitors found.");
+            }
+            else
+            {
+                LoggerInstance.Msg($"Discovered {gameVariableMethods.Count} variable monitors.");
+            }
+        }
+
+        public void LogResponse(HttpListenerResponse response, string message)
+        {
+            LoggerInstance.Msg(message);
+            SendResponse(response, message);
         }
 
         public override void OnApplicationQuit()
@@ -258,9 +366,10 @@ namespace SkRest
             base.OnApplicationQuit();
             if (listener != null)
             {
-                cancellationTokenSource.Cancel(); // Signal cancellation
+                LoggerInstance.Msg("Shutting down REST client...");
                 listener.Stop(); // Stop the listener
                 listener.Close(); // Clean up listener resources
+                cancellationTokenSource.Cancel(); // Signal cancellation
             }
             if (listenerThread != null && listenerThread.IsAlive)
             {
