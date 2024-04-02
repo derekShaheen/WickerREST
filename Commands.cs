@@ -19,7 +19,7 @@ namespace SkRest
 
     public static class CommandActions
     {
-        [CommandHandler("/RevealMap")]
+        [CommandHandler("/revealMap")]
         public static void RevealMapHttp(HttpListenerResponse response)
         {
             RevealMap(response);
@@ -28,8 +28,8 @@ namespace SkRest
         [CommandHandler("/ping")]
         public static void PingHttp(HttpListenerResponse response)
         {
-            SkRest.Instance.LoggerInstance.Msg("Pong!");
-            SkRest.Instance.SendResponse(response, "Pong!");
+            SkRESTClient.Instance.LoggerInstance.Msg("Pong!");
+            SkRESTClient.Instance.SendResponse(response, "Pong!");
         }
 
         public static bool IsPlaying { get => ActiveConfig.isPlaying; set => ActiveConfig.isPlaying = value; }
@@ -37,7 +37,7 @@ namespace SkRest
 
         private static void RevealMap(HttpListenerResponse response)
         {
-            if (SkRest.Instance == null)
+            if (SkRESTClient.Instance == null)
             {
                 return;
             }
@@ -45,15 +45,15 @@ namespace SkRest
             if (GameManager.Instance == null || !GameManager.gameFullyInitialized)
             {
 
-                SkRest.Instance.LoggerInstance.Msg("Must be in-game to reveal map!");
-                SkRest.Instance.SendResponse(response, "Must be in-game to reveal map!");
+                SkRESTClient.Instance.LoggerInstance.Msg("Must be in-game to reveal map!");
+                SkRESTClient.Instance.SendResponse(response, "Must be in-game to reveal map!");
                 return;
             }
 
             if (GameManager.Instance != null && GameManager.gameFullyInitialized)
             {
-                SkRest.Instance.LoggerInstance.Msg("Revealing map...");
-                SkRest.Instance.SendResponse(response, "Revealing map...");
+                SkRESTClient.Instance.LoggerInstance.Msg("Revealing map...");
+                SkRESTClient.Instance.SendResponse(response, "Revealing map...");
                 GameManager.Instance.cameraManager.fogOfWarEffect.mFog.enabled = false;
                 ActiveConfig.isRevealed = true;
 

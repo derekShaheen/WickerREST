@@ -20,7 +20,7 @@ namespace SkRest
         public const string DownloadLink = "";
     }
 
-    public class SkRest : MelonMod
+    public class SkRESTClient : MelonMod
     {
         private Dictionary<string, MethodInfo>? commandHandlers;
 
@@ -29,18 +29,18 @@ namespace SkRest
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         // Instance of this class
-        private static SkRest? instance;
+        private static SkRESTClient? instance;
         private MelonPreferences_Category? modCategory;
         private MelonPreferences_Entry<int>? listeningPort;
 
         // Singleton pattern
-        public static SkRest Instance
+        public static SkRESTClient Instance
         {
             get
             {
                 if (instance == null)
                 {
-                    instance = new SkRest();
+                    instance = new SkRESTClient();
                 }
                 return instance;
             }
@@ -94,7 +94,7 @@ namespace SkRest
 
         }
 
-        private void HandleRequests(CancellationToken cancellationToken)
+        private async void HandleRequests(CancellationToken cancellationToken)
         {
             if (listener == null)
                 return;
@@ -120,7 +120,7 @@ namespace SkRest
                         }
                         else if (request.Url.AbsolutePath == "/")
                         {
-                            ServeHtmlPage(response, "index.html");
+                            await ServeHtmlPage(response, "index.html");
                         }
                         else if (request.Url.AbsolutePath == "/commands")
                         {
@@ -157,9 +157,23 @@ namespace SkRest
             }
         }
 
-        private void ServeHtmlPage(HttpListenerResponse response, string fileName)
+        private async System.Threading.Tasks.Task EnsureHtmlPageExistsAsync(string filePath, string url)
+        {
+            if (!File.Exists(filePath))
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    var htmlContent = await httpClient.GetStringAsync(url);
+                    File.WriteAllText(filePath, htmlContent);
+                }
+            }
+        }
+
+        private async System.Threading.Tasks.Task ServeHtmlPage(HttpListenerResponse response, string fileName)
         {
             var filePath = Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", fileName);
+            await EnsureHtmlPageExistsAsync(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/index.html");
+
             if (File.Exists(filePath))
             {
                 var pageContent = File.ReadAllBytes(filePath);
@@ -170,6 +184,7 @@ namespace SkRest
                 SendResponse(response, "Page not found.", 404);
             }
         }
+
 
         private IEnumerator ExecuteOnMainThread(Action action)
         {

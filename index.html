@@ -41,38 +41,27 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
         window.onload = function () {
+            const commandsContainer = document.getElementById('commands');
+            const loadingSpinner = document.createElement('div');
+            loadingSpinner.innerHTML = `<div class="text-center"><div class="spinner-border text-primary" role="status"></div></div>`;
+            commandsContainer.appendChild(loadingSpinner);
+
             fetch('/commands')
                 .then(response => response.json())
                 .then(data => {
-                    const commandsContainer = document.getElementById('commands');
-                    // Group by categories
-                    const categories = data.commands.reduce((acc, cmd) => {
-                        const category = cmd.category || 'Uncategorized';
-                        if (!acc[category]) acc[category] = [];
-                        acc[category].push(cmd);
-                        return acc;
-                    }, {});
-
-                    Object.keys(categories).sort().forEach(category => {
-                        const categoryDiv = document.createElement('div');
-                        categoryDiv.className = 'category';
-                        const title = document.createElement('h2');
-                        title.textContent = category;
-                        categoryDiv.appendChild(title);
-
-                        categories[category].sort((a, b) => a.path.localeCompare(b.path)).forEach(cmd => {
-                            const button = document.createElement('button');
-                            button.textContent = titleize(cmd.path.substring(1));
-                            button.className = 'btn btn-primary m-2';
-                            button.onclick = () => executeCommand(cmd.path);
-                            categoryDiv.appendChild(button);
-                        });
-
-                        commandsContainer.appendChild(categoryDiv);
+                    commandsContainer.removeChild(loadingSpinner); // Remove spinner
+                    data.commands.forEach(cmd => {
+                        const button = document.createElement('button');
+                        const titleizedCmd = titleize(cmd.substring(1)); // Title-ize and skip the first character
+                        button.textContent = titleizedCmd;
+                        button.className = 'btn btn-primary m-2';
+                        button.setAttribute('data-bs-toggle', 'modal');
+                        button.setAttribute('data-bs-target', '#responseModal');
+                        button.onclick = () => executeCommand(cmd);
+                        commandsContainer.appendChild(button);
                     });
                 });
         };
-
 
         function executeCommand(command) {
             fetch(command) // Ensure the fetch URL is correct
