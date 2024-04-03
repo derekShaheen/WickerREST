@@ -40,7 +40,7 @@
             <div class="row bg-info bg-opacity-10 border border-primary">
                 <div class="col-1 mt-1">
                     <a href="#" onclick="window.location.reload(true);">
-                        <img src="https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/resources/h512.png" class="img-thumbnail" alt="Logo">
+                        <img src="https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/resources/h512.png" class="img-thumbnail">
                     </a>
                 </div>
                 <div class="col">
@@ -81,6 +81,10 @@
             <div id="gameVariables" class="p-3 bg-info bg-opacity-10 border border-info rounded"></div>
         </div>
         <div id="commands"></div>
+        <div class="console-container mt-2">
+            <h4 class="text-warning">Command Output</h4>
+            <div id="commandOutput" class="console-output p-1 bg-dark text-white" style="height: 200px; overflow-y: scroll; border: 1px solid #666;"></div>
+        </div>
     </div>
 
     <!-- Response Modal -->
@@ -126,14 +130,14 @@
             fetch('/commands')
                 .then(response => {
 
+                    return response.json();
+                })
+                .then(data => {
                     const loadingSpinner = document.querySelector('.spinner-border'); // Assuming you have a class to identify the spinner
                     if (loadingSpinner) {
                         loadingSpinner.parentElement.removeChild(loadingSpinner);
                     }
 
-                    return response.json();
-                })
-                .then(data => {
                     createCommandButtons(data.commands);
 
                     // Set header
@@ -150,7 +154,7 @@
         function executeCommand(command) {
             fetch(command)
                 .then(response => response.text())
-                .then(data => displayResponse(data));
+                .then(data => displayResponse(command, command, data));
         }
 
         function showModalForCommand(command, parameters) {
@@ -217,25 +221,56 @@
                 `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
             ).join('&');
 
-            fetch(`${command}?${queryString}`)
+            var commandStr = `${command}?${queryString}`;
+
+            fetch(`${commandStr}`)
                 .then(response => response.text())
-                .then(data => displayResponse(data));
+                .then(data => displayResponse(command, commandStr, data));
         }
 
+        function displayResponse(command, commandStr, data) {
+            const commandOutput = document.getElementById('commandOutput');
 
-        function displayResponse(data) {
-            // Set the response data to the modal's body
-            // If the data is empty, then display a message indicating no response
-            if (!data) {
-                data = 'Command executed.';
-            }
+            // Format the current timestamp
+            const timestamp = new Date().toLocaleTimeString();
 
-            document.getElementById('modalBody').textContent = data;
+            // Create a new div element for the response
+            const responseContainer = document.createElement('div');
+            responseContainer.classList.add('command-response');
 
-            // Show the modal using Bootstrap 5's API
-            var modalElement = document.getElementById('responseModal');
-            var modalInstance = new bootstrap.Modal(modalElement);
-            modalInstance.show();
+            // Create a clickable link element
+            const commandLink = document.createElement('a');
+            commandLink.href = '#'; // Using '#' for now; this will be handled by JavaScript
+            commandLink.textContent = `[${timestamp}] ${command.substring(1)} ► ${data || 'No response data.'}`;
+            commandLink.classList.add('command-link');
+            commandLink.style.color = 'inherit'; // Use the same color as the parent element
+            commandLink.style.textDecoration = 'none'; // Remove underline
+            commandLink.onclick = function (e) {
+                e.preventDefault(); // Prevent the default anchor action
+                executeCommandAgain(commandStr); // Function to execute the command again
+            };
+
+            // Append the link to the response container
+            responseContainer.appendChild(commandLink);
+
+            // Append the new div to the command output container
+            //commandOutput.appendChild(responseContainer);
+            commandOutput.insertBefore(responseContainer, commandOutput.firstChild);
+
+            // Scroll to the bottom of the command output container
+            commandOutput.scrollTop = 0;
+        }
+
+        // Function to re-execute a command from a click
+        function executeCommandAgain(commandWithParameters) {
+            // Extract the command and parameters from the commandWithParameters string
+            // This might need to be adjusted based on how the command string is formatted
+            const [command, queryString] = commandWithParameters.split('?');
+
+            // Re-fetch the command with its parameters
+            fetch(commandWithParameters)
+                .then(response => response.text())
+                .then(data => displayResponse(command, commandWithParameters, data));
         }
 
         let errorLogged = false;
