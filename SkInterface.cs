@@ -132,7 +132,6 @@ namespace SkInterface
                                     // Convert paramValue to the correct type as needed
                                     parameters[i] = Convert.ChangeType(paramValue, paramInfo.ParameterType);
                                     // Log param info
-                                    LoggerInstance.Msg($"Parameter {paramInfo.Name}: {parameters[i]}");
                                 }
                             }
                             MelonCoroutines.Start(ExecuteOnMainThread(() =>
