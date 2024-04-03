@@ -10,20 +10,20 @@ using System.Reflection;
 using Newtonsoft.Json;
 using System.Web;
 
-namespace SkRESTClient
+namespace SkInterface
 {
     public static class BuildInfo
     {
-        public const string Name = "SkRESTClient";
-        public const string Description = "SkRestClient";
+        public const string Name = "SkInterface";
+        public const string Description = "SkInterface";
         public const string Author = "Skrip";
         public const string Version = "1.0.0";
         public const string DownloadLink = "";
     }
 
-    public class SkRESTClient : MelonMod
+    public class SkInterface : MelonMod
     {
-        private Dictionary<string, (MethodInfo Method, string[] Parameters)>? commandHandlers;
+        private Dictionary<string, (MethodInfo Method, string[] Parameters, string Category)>? commandHandlers;
         private Dictionary<string, Func<object>>? gameVariableMethods;
 
         private HttpListener? listener;
@@ -31,18 +31,18 @@ namespace SkRESTClient
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         // Instance of this class
-        private static SkRESTClient? instance;
+        private static SkInterface? instance;
         private MelonPreferences_Category? modCategory;
         private MelonPreferences_Entry<int>? listeningPort;
 
         // Singleton pattern
-        public static SkRESTClient Instance
+        public static SkInterface Instance
         {
             get
             {
                 if (instance == null)
                 {
-                    instance = new SkRESTClient();
+                    instance = new SkInterface();
                 }
                 return instance;
             }
@@ -58,9 +58,7 @@ namespace SkRESTClient
 
             var discoveryThread = new Thread(() =>
             {
-                commandHandlers = DiscoverCommandHandlers();
-                gameVariableMethods = DiscoverGameVariables();
-                OnCommandHandlersDiscovered(); // Notify complete
+                DiscoverHandlersAndVariables(); // Discover command handlers and game variables
             });
             discoveryThread.Start();
 
@@ -155,7 +153,8 @@ namespace SkRESTClient
                                     Path = handler.Key,
                                     Parameters = handler.Value.Method.GetParameters()
                                                     .Select(p => new { p.Name, Type = p.ParameterType.Name })
-                                                    .ToArray()
+                                                    .ToArray(),
+                                    Category = handler.Value.Category
                                 }).ToArray();
 
                                 var commandsJson = JsonConvert.SerializeObject(new { commands = commandsInfo });
@@ -257,9 +256,11 @@ namespace SkRESTClient
             response.OutputStream.Write(buffer, 0, buffer.Length);
         }
 
-        private Dictionary<string, (MethodInfo Method, string[] Parameters)> DiscoverCommandHandlers()
+        private void DiscoverHandlersAndVariables()
         {
-            var handlers = new Dictionary<string, (MethodInfo, string[])>();
+            commandHandlers = new Dictionary<string, (MethodInfo, string[], string)>();
+            gameVariableMethods = new Dictionary<string, Func<object>>();
+
             try
             {
                 foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
@@ -268,27 +269,25 @@ namespace SkRESTClient
                     {
                         foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                         {
-                            var attribute = method.GetCustomAttribute<CommandHandlerAttribute>();
-                            if (attribute != null)
+                            // Discover Command Handlers
+                            var commandAttribute = method.GetCustomAttribute<CommandHandlerAttribute>();
+                            if (commandAttribute != null)
                             {
-                                var path = attribute.Path;
-                                if (handlers.ContainsKey(path))
-                                {
-                                    // If the key already exists, append a unique identifier
-                                    var originalPath = path;
-                                    int counter = 2;
-                                    while (handlers.ContainsKey(path))
-                                    {
-                                        path = $"{originalPath}_{counter}";
-                                        counter++;
-                                    }
-                                }
-                                var parameterInfos = method.GetParameters();
-                                var parameters = parameterInfos
-                                                    .Where(param => param.ParameterType != typeof(HttpListenerResponse))
-                                                    .Select(param => param.Name)
-                                                    .ToArray();
-                                handlers[attribute.Path] = (method, parameters);
+                                string path = EnsureUniqueKey(commandHandlers.Keys, commandAttribute.Path);
+                                var parameters = method.GetParameters()
+                                                        .Where(param => param.ParameterType != typeof(HttpListenerResponse))
+                                                        .Select(param => param.Name)
+                                                        .ToArray();
+                                commandHandlers[path] = (method, parameters, commandAttribute.Category ?? string.Empty);
+                            }
+
+                            // Discover Game Variables
+                            var gameVariableAttribute = method.GetCustomAttribute<GameVariableAttribute>();
+                            if (gameVariableAttribute != null && method.ReturnType != typeof(void) && method.GetParameters().Length == 0)
+                            {
+                                string variableName = EnsureUniqueKey(gameVariableMethods.Keys, gameVariableAttribute.VariableName);
+                                Func<object> valueProvider = () => method.Invoke(null, null);
+                                gameVariableMethods[variableName] = valueProvider;
                             }
                         }
                     }
@@ -297,58 +296,26 @@ namespace SkRESTClient
             catch (ReflectionTypeLoadException ex)
             {
                 // Handle loading errors if necessary
-                //LoggerInstance.Msg($"Error loading command handler: {ex.LoaderExceptions.FirstOrDefault()?.Message}");
+                //LoggerInstance.Msg($"Error during discovery: {ex.LoaderExceptions.FirstOrDefault()?.Message}");
             }
-            return handlers;
+
+            // Notify discovery completion
+            OnCommandHandlersDiscovered();
         }
 
-        private Dictionary<string, Func<object>> DiscoverGameVariables()
+        private string EnsureUniqueKey(IEnumerable<string> existingKeys, string originalKey)
         {
-            var gameVariables = new Dictionary<string, Func<object>>();
-            try
+            string uniqueKey = originalKey;
+            int counter = 2;
+            while (existingKeys.Contains(uniqueKey))
             {
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    foreach (var type in assembly.GetTypes())
-                    {
-                        foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
-                        {
-                            var attribute = method.GetCustomAttribute<GameVariableAttribute>();
-                            if (attribute != null)
-                            {
-                                if (method.ReturnType != typeof(void) && method.GetParameters().Length == 0)
-                                {
-                                    Func<object> valueProvider = () => method.Invoke(null, null);
-
-                                    // Handle duplicates by appending a counter to the variable name
-                                    var variableName = attribute.VariableName;
-                                    if (gameVariables.ContainsKey(variableName))
-                                    {
-                                        int counter = 2; // Start with 2 since the first instance has no number
-                                        var originalVariableName = variableName;
-                                        while (gameVariables.ContainsKey(variableName))
-                                        {
-                                            variableName = $"{originalVariableName}_{counter}";
-                                            counter++;
-                                        }
-                                    }
-                                    gameVariables.Add(variableName, valueProvider);
-                                }
-                            }
-                        }
-                    }
-                }
+                uniqueKey = $"{originalKey}_{counter}";
+                counter++;
             }
-            catch (ReflectionTypeLoadException ex)
-            {
-                // Handle loading errors if necessary
-                //LoggerInstance.Msg($"Error discovering game variables: {ex.LoaderExceptions.FirstOrDefault()?.Message}");
-            }
-            return gameVariables;
+            return uniqueKey;
         }
 
-
-        private void OnCommandHandlersDiscovered()
+        public void OnCommandHandlersDiscovered()
         {
             if (commandHandlers == null || commandHandlers.Count == 0)
             {
@@ -360,11 +327,11 @@ namespace SkRESTClient
             }
             if (gameVariableMethods == null || gameVariableMethods.Count == 0)
             {
-                LoggerInstance.Msg("No variable monitors found.");
+                LoggerInstance.Msg("No game variable monitors found.");
             }
             else
             {
-                LoggerInstance.Msg($"Discovered {gameVariableMethods.Count} variable monitors.");
+                LoggerInstance.Msg($"Discovered {gameVariableMethods.Count} game variable monitors.");
             }
         }
 

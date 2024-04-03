@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace SkRESTClient
+namespace SkInterface
 {
     public static class ActiveConfig
     {
@@ -19,60 +19,54 @@ namespace SkRESTClient
 
     public static class CommandActions
     {
-        [CommandHandler("/revealMap")]
+        [CommandHandler("revealMap", "Test")]
         public static void RevealMapHttp(HttpListenerResponse response)
         {
             RevealMap(response);
         }
 
-        [CommandHandler("/ping")]
+        [CommandHandler("ping", "Main")]
         public static void PingHttp(HttpListenerResponse response)
         {
-            SkRESTClient.Instance.LogResponse(response, "Pong!");
+            SkInterface.Instance.LogResponse(response, "Pong!");
         }
 
-        [CommandHandler("/ping2")]
+        [CommandHandler("pingg")]
         public static void PingHttp2(HttpListenerResponse response)
         {
-            SkRESTClient.Instance.LogResponse(response, "Pong!");
+            SkInterface.Instance.LogResponse(response, "Pong!");
         }
 
-        [CommandHandler("/ping3")]
+        [CommandHandler("ping")]
         public static void PingHttp3(HttpListenerResponse response)
         {
-            SkRESTClient.Instance.LogResponse(response, "Pong!");
+            SkInterface.Instance.LogResponse(response, "Pong2!");
         }
 
-        [CommandHandler("/inputTest")]
-        public static void InputTestHTTP(HttpListenerResponse response, string input = "")
+        [CommandHandler("inputTest", "Main")]
+        public static void InputTestHTTP(HttpListenerResponse response, string input)
         {
-            SkRESTClient.Instance.LogResponse(response, "Received:" + " '" + input + "'");
+            SkInterface.Instance.LogResponse(response, "Received:" + " '" + input + "'");
         }
 
-        [GameVariable("GameManagerName")]
-        public static string GetGameManagerName()
+        [GameVariable("GameReadyToPlay")]
+        public static string GetGameReadyToPlay()
         {
-            if (GameManager.Instance != null)
-                return GameManager.Instance.name;
-
-            return "GameManager not found!";
+            return GameManager.gameReadyToPlay.ToString();
         }
 
-        [GameVariable("GameManagerName2")]
-        public static string GetGameManagerName2()
+        [GameVariable("IsGameLoaded")]
+        public static string GetGameIsLoaded()
         {
             if (GameManager.Instance != null)
-                return GameManager.Instance.name;
+                return GameManager.Instance.isLoadedGame.ToString();
 
-            return "GameManager not found!";
+            return "False";
         }
-        [GameVariable("GameManagerName3")]
-        public static string GetGameManagerName3()
+        [GameVariable("GameFullyInitialized")]
+        public static string GetGmeFullyInitialized()
         {
-            if (GameManager.Instance != null)
-                return GameManager.Instance.name;
-
-            return "GameManager not found!";
+            return GameManager.gameFullyInitialized.ToString();
         }
 
         private static int relicCount = 0;
@@ -100,7 +94,7 @@ namespace SkRESTClient
 
         private static void RevealMap(HttpListenerResponse response)
         {
-            if (SkRESTClient.Instance == null)
+            if (SkInterface.Instance == null)
             {
                 return;
             }
@@ -108,13 +102,13 @@ namespace SkRESTClient
             if (GameManager.Instance == null || !GameManager.gameFullyInitialized)
             {
 
-                SkRESTClient.Instance.LogResponse(response, "Must be in-game to reveal map!");
+                SkInterface.Instance.LogResponse(response, "Must be in-game to reveal map!");
                 return;
             }
 
             if (GameManager.Instance != null && GameManager.gameFullyInitialized)
             {
-                SkRESTClient.Instance.LogResponse(response, "Revealing map...");
+                SkInterface.Instance.LogResponse(response, "Revealing map...");
                 GameManager.Instance.cameraManager.fogOfWarEffect.mFog.enabled = false;
                 ActiveConfig.isRevealed = true;
 
