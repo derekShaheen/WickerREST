@@ -45,7 +45,21 @@ namespace SkInterface
         }
 
         [CommandHandler("inputTest", "Main")]
-        public static void InputTestHTTP(HttpListenerResponse response, string input)
+        public static void InputTestHTTP(HttpListenerResponse response, string TestCase, string input = "test", string input2 = "testlols")
+        {
+            // Write output of each var
+            StringBuilder responseContent = new StringBuilder();
+            // Append output of each var to the response content
+            responseContent.AppendLine("TestCase: '" + TestCase + "'");
+            responseContent.AppendLine("input: '" + input + "'");
+            responseContent.AppendLine("input2: '" + input2 + "'");
+
+            // Now send the accumulated response content as one response
+            SkInterface.Instance.LogResponse(response, responseContent.ToString());
+        }
+
+        [CommandHandler("secondInputTest", "Main")]
+        public static void InputTest2HTTP(HttpListenerResponse response, string input)
         {
             SkInterface.Instance.LogResponse(response, "Received:" + " '" + input + "'");
         }

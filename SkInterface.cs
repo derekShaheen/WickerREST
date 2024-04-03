@@ -14,8 +14,8 @@ namespace SkInterface
 {
     public static class BuildInfo
     {
-        public const string Name = "SkInterface";
-        public const string Description = "SkInterface";
+        public const string Name = "WickerREST";
+        public const string Description = "WickerREST";
         public const string Author = "Skrip";
         public const string Version = "1.0.0";
         public const string DownloadLink = "";
@@ -155,7 +155,11 @@ namespace SkInterface
                                 var commandsInfo = commandHandlers.Select(handler => new {
                                     Path = handler.Key,
                                     Parameters = handler.Value.Method.GetParameters()
-                                                    .Select(p => new { p.Name, Type = p.ParameterType.Name })
+                                                    .Select(p => new {
+                                                        p.Name,
+                                                        Type = p.ParameterType.Name,
+                                                        DefaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null
+                                                    })
                                                     .ToArray(),
                                     Category = handler.Value.Category
                                 }).ToArray();
@@ -175,6 +179,7 @@ namespace SkInterface
                                 SendResponse(response, @"", 200);
                             }
                         }
+
                         else if (request.Url.AbsolutePath == "/game-variables")
                         {
                             if (gameVariableMethods != null && gameVariableMethods.Count > 0)
@@ -293,7 +298,7 @@ namespace SkInterface
                 }
                 catch (Exception ex)
                 {
-                    LoggerInstance.Error($"Error serving favicon: {ex.Message}");
+                    //
                 }
             }
             else

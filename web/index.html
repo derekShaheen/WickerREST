@@ -42,7 +42,7 @@
                     <img src="https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/resources/h512.png" class="img-thumbnail" alt="Logo">
                 </div>
                 <div class="col">
-                    <h5 class="--bs-secondary-color">REST for Unity</h5>
+                    <h5 class="--bs-secondary-color">Unity WickerREST</h5>
                     <h1 class="--bs-primary"></h1>
                 </div>
             </div>
@@ -157,7 +157,7 @@
 
             parameters.forEach(param => {
                 if (param.Name === 'response') {
-                    return; // Skip this iteration, don't create input for 'response'
+                    return; // Skip 'response' parameter
                 }
                 const inputGroup = document.createElement('div');
                 inputGroup.className = 'input-group mb-3';
@@ -170,8 +170,13 @@
                 input.type = 'text';
                 input.className = 'form-control';
                 input.placeholder = param.Name;
-                input.id = 'input-' + param.Name; // Ensure unique ID for each input
-                input.setAttribute('data-parameter', param.Name); // Use parameter name
+                input.id = 'input-' + param.Name;
+                input.setAttribute('data-parameter', param.Name);
+
+                // Set default value if available
+                if (param.DefaultValue !== null) {
+                    input.value = param.DefaultValue;
+                }
 
                 inputGroup.appendChild(inputLabel);
                 inputGroup.appendChild(input);
@@ -185,13 +190,11 @@
             submitButton.onclick = () => {
                 const inputs = modalBody.querySelectorAll('input');
                 const inputValues = Array.from(inputs).reduce((acc, input) => {
-                    // Use the parameter name stored in 'data-parameter' for each input
                     const paramName = input.getAttribute('data-parameter');
                     acc[paramName] = input.value;
                     return acc;
                 }, {});
 
-                // Close modal and send parameters correctly
                 const modalElement = document.getElementById('responseModal');
                 const modalInstance = bootstrap.Modal.getInstance(modalElement);
                 modalInstance.hide();
@@ -200,11 +203,11 @@
             };
             modalBody.appendChild(submitButton);
 
-            // Show modal using Bootstrap 5's JavaScript API
             const modalElement = document.getElementById('responseModal');
             const modalInstance = new bootstrap.Modal(modalElement);
             modalInstance.show();
         }
+
 
         function sendCommandWithParameters(command, parameters) {
             // Construct a query string where keys are parameter names
