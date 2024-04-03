@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <title>Game Commands</title>
+    <!-- Google Fonts Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
     <style>
         .flash-update {
-            animation: flash-animation 0.5s 1;
+            animation: flash-animation 0.75s 1;
         }
 
         @keyframes flash-animation {
@@ -19,26 +25,31 @@
                 background-color: transparent;
             }
         }
+
+        /* Apply Oswald Font to All Headers */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: "Ubuntu", sans-serif;
+            font-weight: 700;
+        }
     </style>
 
 </head>
 <body class="bg-dark text-light">
     <div class="container">
         <div class="container text-center">
-            <div class="row">
-                <div class="col bg-info bg-opacity-10 border border-primary">
-                    <h1 class="--bs-primary mt-3 mb-3">SkInterface</h1>
+            <div class="row bg-info bg-opacity-10 border border-primary">
+                <div class="col-1 mt-1">
+                    <img src="https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/resources/h512.png" class="img-thumbnail" alt="Logo">
                 </div>
-            </div>
-            <div class="row">
                 <div class="col">
-                    <h5 id="connectionStatus" class="text-warning">Checking server connection...</h5>
+                    <h5 class="--bs-secondary-color">REST for Unity</h5>
+                    <h1 class="--bs-primary"></h1>
                 </div>
             </div>
         </div>
 
-        <div class="row mb-3">
-            <div class="col">
+        <div class="row mt-3">
+            <div class="col d-flex">
                 <!-- Button to toggle the collapsible -->
                 <button class="btn btn-success mb-2" type="button" data-bs-toggle="collapse"
                         data-bs-target="#gameVariablesCollapse" aria-expanded="false"
@@ -46,6 +57,9 @@
                         style="display: none;">
                     View Game Variables
                 </button>
+            </div>
+            <div class="col d-flex align-items-center">
+                <h5 id="connectionStatus" class="text-warning">Checking server connection...</h5>
             </div>
             <div class="col col-sm-3 d-flex align-items-center">
                 <div class="form-check" id="flashCheck">
@@ -56,7 +70,7 @@
                 </div>
             </div>
             <div class="col col-sm-3 d-flex align-items-center">
-                <input type="number" id="columnControlInput" class="form-control" value="1" min="1" max="6">
+                <input type="number" id="columnControlInput" class="form-control" value="2" min="1" max="6">
             </div>
 
         </div>
@@ -85,6 +99,23 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
         window.onload = function () {
+            // Handle Cookies
+            const columnControlInput = document.getElementById('columnControlInput');
+            const cookies = document.cookie.split(';').reduce((res, c) => {
+                const [key, val] = c.trim().split('=').map(decodeURIComponent);
+                try {
+                    return Object.assign(res, { [key]: JSON.parse(val) });
+                } catch (e) {
+                    return Object.assign(res, { [key]: val });
+                }
+            }, {});
+
+            // Check if the columnCount cookie exists and set the input value
+            if (cookies.columnCount) {
+                columnControlInput.value = cookies.columnCount;
+            }
+
+            // Fetch commands
             const commandsContainer = document.getElementById('commands');
             const loadingSpinner = document.createElement('div');
             loadingSpinner.innerHTML = `<div class="text-center"><div class="spinner-border text-primary" role="status"></div></div>`;
@@ -107,7 +138,7 @@
                     if (data.productName) {
                         const headerElement = document.querySelector('h1');
                         //headerElement.textContent += ` - ${data.productName}`;
-                        headerElement.textContent = `SkInterface ► ${data.productName}`;
+                        headerElement.textContent = `${data.productName}`;
                     }
 
 
@@ -189,6 +220,11 @@
 
         function displayResponse(data) {
             // Set the response data to the modal's body
+            // If the data is empty, then display a message indicating no response
+            if (!data) {
+                data = 'Command executed.';
+            }
+
             document.getElementById('modalBody').textContent = data;
 
             // Show the modal using Bootstrap 5's API
@@ -235,10 +271,11 @@
 
                                 const card = document.createElement('div');
                                 card.setAttribute('data-variable', variableName);
-                                card.className = 'card';
+                                card.className = 'card mt-2';
                                 const cardBody = document.createElement('div');
                                 cardBody.className = 'card-body';
-                                cardBody.textContent = `${variableName}: ${value}`;
+                                const titleizedCard = titleize(variableName);
+                                cardBody.textContent = `${titleizedCard}: ${value}`;
                                 card.appendChild(cardBody);
 
                                 col.appendChild(card);
@@ -316,13 +353,28 @@
         }
 
         function titleize(str) {
-            // Insert a space before capital letters found in the middle of a word
-            const withSpaces = str.replace(/([a-z])([A-Z])/g, '$1 $2');
+            // List of minor words that shouldn't be capitalized unless they are the first or last word.
+            const minorWords = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'as', 'at', 'by', 'for', 'from', 'in', 'into', 'near', 'of', 'on', 'onto', 'to', 'with'];
 
-            // Convert string to lowercase, then titleize
-            return withSpaces.toLowerCase().split(' ').map(function (word) {
-                return word.charAt(0).toUpperCase() + word.slice(1);
-            }).join(' ');
+            // Insert a space before capital letters found in the middle of a word
+            const withSpaces = str.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+
+            // Split into words and capitalize appropriately
+            const words = withSpaces.split(' ').map((word, index, array) => {
+                // Always capitalize the first word and the last word
+                if (index === 0 || index === array.length - 1) {
+                    return word.charAt(0).toUpperCase() + word.slice(1);
+                }
+
+                // If it's a minor word, keep it lowercase; otherwise, capitalize it
+                if (minorWords.includes(word)) {
+                    return word;
+                } else {
+                    return word.charAt(0).toUpperCase() + word.slice(1);
+                }
+            });
+
+            return words.join(' ');
         }
 
         function createCommandButtons(commandsData) {
@@ -349,7 +401,7 @@
                 const cmds = groupedCommands[category].sort((a, b) => a.Path.localeCompare(b.Path)); // Sort commands within category
 
                 const categoryDiv = document.createElement('div');
-                categoryDiv.className = `category-section mt-4 mb-3`;
+                categoryDiv.className = `category-section mt-2 mb-3`;
 
                 const categoryHeader = document.createElement('h4');
                 categoryHeader.textContent = category;
@@ -383,7 +435,12 @@
             });
         }
 
-        document.getElementById('columnControlInput').addEventListener('change', fetchGameVariables);
+        document.getElementById('columnControlInput').addEventListener('change', function () {
+            const columnCount = this.value;
+            document.cookie = "SameSite=Lax; columnCount=" + columnCount + "; Path=/; max-age=31536000"; // Expires after 1 year
+            fetchGameVariables();
+        });
+
     </script>
 </body>
 </html>

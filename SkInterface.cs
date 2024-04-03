@@ -146,7 +146,7 @@ namespace SkInterface
                         }
                         else if (request.Url.AbsolutePath == "/favicon.ico")
                         {
-                            ServeFavicon(response, Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", "resources", "favicon.ico"));
+                            await ServeFavicon(response, Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", "resources", "favicon.ico"));
                         }
                         else if (request.Url.AbsolutePath == "/commands")
                         {
@@ -219,22 +219,49 @@ namespace SkInterface
             }
         }
 
-        private async System.Threading.Tasks.Task EnsureFileExists(string filePath, string url)
+        private async System.Threading.Tasks.Task EnsureFileExists(string filePath, string url, bool isBinary = false)
         {
             if (!File.Exists(filePath))
             {
-                using (var httpClient = new HttpClient())
+                try
                 {
-                    var htmlContent = await httpClient.GetStringAsync(url);
-                    File.WriteAllText(filePath, htmlContent);
+                    using (var httpClient = new HttpClient())
+                    {
+                        if (isBinary)
+                        {
+                            LoggerInstance.Msg($"Attempting binary download of {url}");
+                            var response = await httpClient.GetAsync(url);
+                            if (response.IsSuccessStatusCode)
+                            {
+                                var contentBytes = await response.Content.ReadAsByteArrayAsync();
+                                await File.WriteAllBytesAsync(filePath, contentBytes);
+                                LoggerInstance.Msg($"Downloaded binary file to {filePath}");
+                            }
+                            else
+                            {
+                                LoggerInstance.Msg($"Failed to download binary file. Status code: {response.StatusCode}");
+                            }
+                        }
+                        else
+                        {
+                            var contentString = await httpClient.GetStringAsync(url);
+                            await File.WriteAllTextAsync(filePath, contentString);
+                            LoggerInstance.Msg($"Downloaded text file to {filePath}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LoggerInstance.Msg($"Exception during file download: {ex.Message}");
                 }
             }
         }
 
+
         private async System.Threading.Tasks.Task ServeHtmlPage(HttpListenerResponse response, string fileName)
         {
             var filePath = Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", "resources", fileName);
-            await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/web/main/index.html");
+            await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/index.html");
 
             if (File.Exists(filePath))
             {
@@ -249,35 +276,33 @@ namespace SkInterface
 
         private async System.Threading.Tasks.Task ServeFavicon(HttpListenerResponse response, string filePath)
         {
-            try
-            {
-                await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/resources/favicon.ico");
+            await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/resources/favicon.ico", true);
 
-                var fileInfo = new FileInfo(filePath);
-                if (fileInfo.Exists)
+            var fileInfo = new FileInfo(filePath);
+            if (fileInfo.Exists)
+            {
+                try
                 {
                     response.ContentType = "image/x-icon";
                     response.ContentLength64 = fileInfo.Length;
                     using (var fileStream = fileInfo.OpenRead())
                     {
-                        fileStream.CopyTo(response.OutputStream);
+                        await fileStream.CopyToAsync(response.OutputStream);
                     }
                     response.StatusCode = 200; // OK
                 }
-                else
+                catch (Exception ex)
                 {
-                    response.StatusCode = 404; // Not Found
+                    LoggerInstance.Error($"Error serving favicon: {ex.Message}");
                 }
             }
-            catch (Exception)
+            else
             {
-                response.StatusCode = 500; // Internal Server Error
-            }
-            finally
-            {
-                response.Close();
+                response.StatusCode = 404; // Not Found
+                                           // Make sure not to close the response here if it's managed elsewhere
             }
         }
+
 
         private IEnumerator ExecuteOnMainThread(Action action)
         {
@@ -289,7 +314,6 @@ namespace SkInterface
         {
             response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
             response.Headers.Add("Pragma", "no-cache");
-            response.Headers.Add("Expires", "0");
             //
             response.StatusCode = statusCode;
             response.ContentType = contentType;
