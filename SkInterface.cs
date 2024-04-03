@@ -266,7 +266,7 @@ namespace SkInterface
         private async System.Threading.Tasks.Task ServeHtmlPage(HttpListenerResponse response, string fileName)
         {
             var filePath = Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", "resources", fileName);
-            await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/index.html");
+            await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/index.html");
 
             if (File.Exists(filePath))
             {
@@ -281,7 +281,7 @@ namespace SkInterface
 
         private async System.Threading.Tasks.Task ServeFavicon(HttpListenerResponse response, string filePath)
         {
-            await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/resources/favicon.ico", true);
+            await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/resources/favicon.ico", true);
 
             var fileInfo = new FileInfo(filePath);
             if (fileInfo.Exists)
