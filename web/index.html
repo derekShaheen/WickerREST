@@ -5,6 +5,22 @@
     <title>Game Commands</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        .flash-update {
+            animation: flash-animation 0.5s 1;
+        }
+
+        @keyframes flash-animation {
+            0% {
+                background-color: rgba(var(--bs-info-rgb), 0.3);
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+    </style>
+
 </head>
 <body class="bg-dark text-light">
     <div class="container">
@@ -31,9 +47,18 @@
                     View Game Variables
                 </button>
             </div>
-            <div class="col col-sm-3">
-                <input type="number" id="columnControlInput" class="form-control" value="1" min="1" max="6" style="display: none;">
+            <div class="col col-sm-3 d-flex align-items-center">
+                <div class="form-check" id="flashCheck">
+                    <input class="form-check-input" type="checkbox" value="" id="flashCheckbox" checked>
+                    <label class="form-check-label" for="flashCheckbox">
+                        Flash on Update
+                    </label>
+                </div>
             </div>
+            <div class="col col-sm-3 d-flex align-items-center">
+                <input type="number" id="columnControlInput" class="form-control" value="1" min="1" max="6">
+            </div>
+
         </div>
         <!-- Collapsible container for game variables -->
         <div class="collapse" id="gameVariablesCollapse">
@@ -43,7 +68,7 @@
     </div>
 
     <!-- Response Modal -->
-    <div class="modal fade" id="responseModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="modal modal-dialog-scrollable" id="responseModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
         <div class="modal-dialog">
             <div class="modal-content bg-dark text-light">
                 <div class="modal-header">
@@ -66,9 +91,26 @@
             commandsContainer.appendChild(loadingSpinner);
 
             fetch('/commands')
-                .then(response => response.json())
+                .then(response => {
+
+                    const loadingSpinner = document.querySelector('.spinner-border'); // Assuming you have a class to identify the spinner
+                    if (loadingSpinner) {
+                        loadingSpinner.parentElement.removeChild(loadingSpinner);
+                    }
+
+                    return response.json();
+                })
                 .then(data => {
                     createCommandButtons(data.commands);
+
+                    // Set header
+                    if (data.productName) {
+                        const headerElement = document.querySelector('h1');
+                        //headerElement.textContent += ` - ${data.productName}`;
+                        headerElement.textContent = `SkInterface ► ${data.productName}`;
+                    }
+
+
                 });
         };
 
@@ -157,6 +199,7 @@
 
         let errorLogged = false;
         let serverAvailable = true;
+        let prevGameVariables = {};
 
         function fetchGameVariables() {
             if (!serverAvailable) {
@@ -176,6 +219,7 @@
                 })
                 .then(data => {
                     const container = document.getElementById('gameVariables');
+                    const flashEnabled = document.getElementById('flashCheckbox').checked;
                     const numberOfColumns = parseInt(document.getElementById('columnControlInput').value) || 1; // Default to 1 column
                     container.innerHTML = '';
 
@@ -190,6 +234,7 @@
                                 col.className = `col-${12 / numberOfColumns}`; // Bootstrap class for column sizing
 
                                 const card = document.createElement('div');
+                                card.setAttribute('data-variable', variableName);
                                 card.className = 'card';
                                 const cardBody = document.createElement('div');
                                 cardBody.className = 'card-body';
@@ -206,6 +251,23 @@
                                 }
                             });
 
+                        Object.entries(data).forEach(([variableName, value]) => {
+                            // Check if the variable's value has changed
+                            if (prevGameVariables[variableName] !== value) {
+                                const variableElement = document.querySelector(`[data-variable="${variableName}"]`);
+                                if (variableElement && flashEnabled) {
+                                    variableElement.classList.add('flash-update');
+
+                                    // Remove the class after animation ends
+                                    setTimeout(() => {
+                                        variableElement.classList.remove('flash-update');
+                                    }, 1000);
+                                }
+                            }
+                        });
+
+                        prevGameVariables = { ...data };
+
                         // Add any remaining columns not appended in the forEach loop
                         if (row.hasChildNodes()) {
                             container.appendChild(row);
@@ -213,9 +275,11 @@
 
                         document.getElementById('toggleGameVariablesBtn').style.display = 'block';
                         document.getElementById('columnControlInput').style.display = 'block';
+                        document.getElementById('flashCheck').style.display = 'block';
                     } else {
                         document.getElementById('toggleGameVariablesBtn').style.display = 'none';
                         document.getElementById('columnControlInput').style.display = 'none';
+                        document.getElementById('flashCheck').style.display = 'none';
                     }
                 })
                 .catch(error => {
@@ -227,6 +291,7 @@
                         document.getElementById('columnControlInput').style.display = 'none';
                         document.getElementById('gameVariables').innerHTML = '';
                         document.getElementById('gameVariables').style.display = 'none';
+                        document.getElementById('flashCheck').style.display = 'none';
                         errorLogged = true; // Log the error once
                     }
                     // Implement a retry logic after a delay
@@ -235,6 +300,7 @@
         }
 
         // Poll game variables
+        fetchGameVariables();
         setInterval(fetchGameVariables, 2000);
 
         function updateConnectionStatus(isConnected) {
@@ -244,7 +310,7 @@
                 statusElement.className = "text-success"; // Use Bootstrap class for styling
             }
             else {
-                statusElement.textContent = "Telemetry Lost"//"Telemetry unable to connect";
+                statusElement.textContent = ""//"Telemetry Lost";
                 statusElement.className = "text-danger"; // Use Bootstrap class for styling
             }
         }
@@ -265,13 +331,13 @@
 
             // Group commands by category and sort categories
             const groupedCommands = commandsData.reduce((acc, cmd) => {
-                const category = cmd.Category || 'Uncategorized';
+                const category = cmd.Category || 'Miscellaneous';
                 acc[category] = acc[category] || [];
                 acc[category].push(cmd);
                 return acc;
             }, {});
 
-            // Ensure "Main" category is sorted to the top
+            // Ensure "Miscellaneous" category is sorted to the bottom
             const sortedCategories = Object.keys(groupedCommands).sort((a, b) => {
                 if (a === "Miscellaneous") return 1;
                 if (b === "Miscellaneous") return -1;

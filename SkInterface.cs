@@ -61,7 +61,6 @@ namespace SkInterface
                 DiscoverHandlersAndVariables(); // Discover command handlers and game variables
             });
             discoveryThread.Start();
-
             HarmonyInstance.PatchAll();
             modCategory = MelonPreferences.CreateCategory("SkREST");
             modCategory.SetFilePath(Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", "SkRESTClient.cfg"));
@@ -145,6 +144,10 @@ namespace SkInterface
                         {
                             await ServeHtmlPage(response, "index.html");
                         }
+                        else if (request.Url.AbsolutePath == "/favicon.ico")
+                        {
+                            ServeFavicon(response, Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", "resources", "favicon.ico"));
+                        }
                         else if (request.Url.AbsolutePath == "/commands")
                         {
                             if (commandHandlers != null && commandHandlers.Count > 0)
@@ -157,12 +160,19 @@ namespace SkInterface
                                     Category = handler.Value.Category
                                 }).ToArray();
 
-                                var commandsJson = JsonConvert.SerializeObject(new { commands = commandsInfo });
+                                var productName = Application.productName;
+                                var responseContent = new
+                                {
+                                    productName = productName,
+                                    commands = commandsInfo,
+                                };
+
+                                var commandsJson = JsonConvert.SerializeObject(responseContent);
                                 SendResponse(response, commandsJson, 200, "application/json");
                             }
                             else
                             {
-                                SendResponse(response, "No commands found.", 404);
+                                SendResponse(response, @"", 200);
                             }
                         }
                         else if (request.Url.AbsolutePath == "/game-variables")
@@ -209,7 +219,7 @@ namespace SkInterface
             }
         }
 
-        private async System.Threading.Tasks.Task EnsureHtmlPageExistsAsync(string filePath, string url)
+        private async System.Threading.Tasks.Task EnsureFileExists(string filePath, string url)
         {
             if (!File.Exists(filePath))
             {
@@ -223,8 +233,8 @@ namespace SkInterface
 
         private async System.Threading.Tasks.Task ServeHtmlPage(HttpListenerResponse response, string fileName)
         {
-            var filePath = Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", fileName);
-            await EnsureHtmlPageExistsAsync(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/index.html");
+            var filePath = Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", "resources", fileName);
+            await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/web/main/index.html");
 
             if (File.Exists(filePath))
             {
@@ -234,6 +244,38 @@ namespace SkInterface
             else
             {
                 SendResponse(response, "Page not found.", 404);
+            }
+        }
+
+        private async System.Threading.Tasks.Task ServeFavicon(HttpListenerResponse response, string filePath)
+        {
+            try
+            {
+                await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/web/resources/main/favicon.ico");
+
+                var fileInfo = new FileInfo(filePath);
+                if (fileInfo.Exists)
+                {
+                    response.ContentType = "image/x-icon";
+                    response.ContentLength64 = fileInfo.Length;
+                    using (var fileStream = fileInfo.OpenRead())
+                    {
+                        fileStream.CopyTo(response.OutputStream);
+                    }
+                    response.StatusCode = 200; // OK
+                }
+                else
+                {
+                    response.StatusCode = 404; // Not Found
+                }
+            }
+            catch (Exception)
+            {
+                response.StatusCode = 500; // Internal Server Error
+            }
+            finally
+            {
+                response.Close();
             }
         }
 

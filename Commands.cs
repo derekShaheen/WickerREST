@@ -40,7 +40,8 @@ namespace SkInterface
         [CommandHandler("ping")]
         public static void PingHttp3(HttpListenerResponse response)
         {
-            SkInterface.Instance.LogResponse(response, "Pong2!");
+            //SkInterface.Instance.LogResponse(response, "Pong2!");
+            SkInterface.Instance.LoggerInstance.Msg("Pong2!");
         }
 
         [CommandHandler("inputTest", "Main")]
@@ -71,21 +72,21 @@ namespace SkInterface
 
         private static int relicCount = 0;
 
-        [GameVariable("RelicCount")]
+        [GameVariable("FoodProduced")]
         public static string GetRelicCount()
         {
             if (GameManager.Instance == null)
             {
-                relicCount = -1;
+                return "-1";
             }
 
-            if (GameManager.Instance != null && relicCount <= 0)
-            {
-                var relicResources = UnityEngine.Object.FindObjectsOfType<RelicExtractionResource>();
-                relicCount = relicResources.Length;
-            }
+            //if (GameManager.Instance != null && relicCount <= 0)
+            //{
+            //    var relicResources = UnityEngine.Object.FindObjectsOfType<Villager>();
+            //    relicCount = relicResources.Length;
+            //}
 
-            return relicCount.ToString();
+            return GameManager.Instance.villageStats.GetCurrentTrackedFoodProduced().Count.ToString();
         }
 
 
