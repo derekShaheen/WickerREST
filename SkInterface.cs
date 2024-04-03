@@ -251,7 +251,7 @@ namespace SkInterface
         {
             try
             {
-                await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/web/resources/main/favicon.ico");
+                await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/resources/favicon.ico");
 
                 var fileInfo = new FileInfo(filePath);
                 if (fileInfo.Exists)
