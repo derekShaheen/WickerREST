@@ -2,7 +2,7 @@
 <html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <title>Game Commands</title>
+    <title>Unity WickerREST</title>
     <!-- Google Fonts Preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,7 +39,9 @@
         <div class="container text-center">
             <div class="row bg-info bg-opacity-10 border border-primary">
                 <div class="col-1 mt-1">
-                    <img src="https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/resources/h512.png" class="img-thumbnail" alt="Logo">
+                    <a href="#" onclick="window.location.reload(true);">
+                        <img src="https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/resources/h512.png" class="img-thumbnail" alt="Logo">
+                    </a>
                 </div>
                 <div class="col">
                     <h5 class="--bs-secondary-color">Unity WickerREST</h5>
@@ -48,10 +50,10 @@
             </div>
         </div>
 
-        <div class="row mt-3">
+        <div class="row mt-2 mb-2">
             <div class="col d-flex">
                 <!-- Button to toggle the collapsible -->
-                <button class="btn btn-success mb-2" type="button" data-bs-toggle="collapse"
+                <button class="btn btn-success" type="button" data-bs-toggle="collapse"
                         data-bs-target="#gameVariablesCollapse" aria-expanded="false"
                         aria-controls="gameVariablesCollapse" id="toggleGameVariablesBtn"
                         style="display: none;">
@@ -357,7 +359,8 @@
 
         function titleize(str) {
             // List of minor words that shouldn't be capitalized unless they are the first or last word.
-            const minorWords = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'as', 'at', 'by', 'for', 'from', 'in', 'into', 'near', 'of', 'on', 'onto', 'to', 'with'];
+            const minorWords = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'as', 'at'
+                , 'by', 'for', 'from', 'in', 'into', 'near', 'of', 'on', 'onto', 'to', 'with'];
 
             // Insert a space before capital letters found in the middle of a word
             const withSpaces = str.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
@@ -404,7 +407,7 @@
                 const cmds = groupedCommands[category].sort((a, b) => a.Path.localeCompare(b.Path)); // Sort commands within category
 
                 const categoryDiv = document.createElement('div');
-                categoryDiv.className = `category-section mt-2 mb-3`;
+                categoryDiv.className = `category-section mt-2`;
 
                 const categoryHeader = document.createElement('h4');
                 categoryHeader.textContent = category;
