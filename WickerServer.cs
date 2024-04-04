@@ -14,7 +14,7 @@ namespace SkInterface
         public const string Name = "WickerREST";
         public const string Description = "WickerREST";
         public const string Author = "Skrip";
-        public const string Version = "1.0.0";
+        public const string Version = "0.9.0";
         public const string DownloadLink = "";
     }
 
