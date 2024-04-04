@@ -44,7 +44,7 @@ To integrate WickerREST into your Unity game, follow these steps:
 
 ## Getting Started (Developers)
 
-?? **![Sample project repository is available at this link ](https://github.com/derekShaheen/WickerREST-Sample-Plugin)**
+**![Sample project repository is available at this link ](https://github.com/derekShaheen/WickerREST-Sample-Plugin)**
 
 To integrate WickerREST into your Unity project, follow these steps:
 
