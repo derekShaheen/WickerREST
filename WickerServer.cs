@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Web;
 using UnityEngine;
 
-namespace SkInterface
+namespace Wicker
 {
     public static class BuildInfo
     {
@@ -25,6 +25,7 @@ namespace SkInterface
         private const string FAVICON_PATH   = "/favicon.ico";
         private const string INDEX_URL      = @"https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/index.html";
         private const string FAVICON_URL    = @"https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/resources/favicon.ico";
+        private const string DWYL_URL       = @"https://hits.dwyl.com/derekShaheen/WickerREST.svg";
         private const string userDataPath   = "WickerREST";
         private const string resourcesPath  = "WickerREST/resources";
 
@@ -179,6 +180,7 @@ namespace SkInterface
                         {
                             if (commandHandlers != null && commandHandlers.Count > 0)
                             {
+                                //await EnsureFileExists("/dwyl", DWYL_URL, true);
                                 var commandsInfo = commandHandlers.Select(handler => new {
                                     Path = handler.Key,
                                     Parameters = handler.Value.Method.GetParameters()
