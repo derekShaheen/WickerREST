@@ -6,7 +6,7 @@ Stable / Release|Hit Counter
 | :------------: | :------------: |
 ![releaseworkflow](https://github.com/derekShaheen/WickerREST/actions/workflows/release.yml/badge.svg)| [![HitCount](https://hits.dwyl.com/derekShaheen/WickerREST.svg?style=flat)](http://hits.dwyl.com/derekShaheen/WickerREST)|
 
-Unity WickerREST is a powerful framework designed for Unity developers, allowing for the dynamic creation of commands and game variable monitoring through a web interface. This mod leverages the capabilities of Harmony and MelonLoader to extend Unity games with a RESTful API, making it possible to interact with the game's internals in real-time from a web browser.
+Unity WickerREST is a powerful framework designed for Unity developers, allowing for the dynamic creation of commands and game variable monitoring through a web interface. This mod leverages the capabilities of .NET to extend Unity games with a RESTful API, making it possible to interact with the game's internals in real-time from a web browser.
 
 ## Features
 
