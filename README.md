@@ -15,6 +15,23 @@ Unity WickerREST is a powerful framework designed for Unity developers, allowing
 - **Flexible Configuration**: Use MelonPreferences to customize settings such as the listening port and debug level.
 - **Developer-Friendly**: Designed with simplicity in mind, allowing quick integration into your projects.
 
+![SampleUserInterface](https://i.imgur.com/vKwkLkQ.png)
+
+Reveal Map button and Game Fully Initialized variable monitor were generated from this code:
+```csharp
+[CommandHandler("revealMap")]
+public static void RevealMapHttp(HttpListenerResponse response)
+{
+    Processing.RevealMap(response);
+}
+
+[GameVariable("GameFullyInitialized")]
+public static string GetGmeFullyInitialized()
+{
+    return GameManager.gameFullyInitialized.ToString();
+}
+```
+
 ## Getting Started (Users)
 
 To integrate WickerREST into your Unity game, follow these steps:
@@ -26,6 +43,8 @@ To integrate WickerREST into your Unity game, follow these steps:
 3. **Accessing the Web Interface**: Start your game, and navigate to `http://localhost:6103/` in your web browser to access the command interface and game variable monitor. **Default is port 6103.**
 
 ## Getting Started (Developers)
+
+?? **![Sample project repository is available at this link ](https://github.com/derekShaheen/WickerREST-Sample-Plugin)**
 
 To integrate WickerREST into your Unity project, follow these steps:
 
