@@ -15,10 +15,17 @@ Unity WickerREST is a powerful framework designed for Unity developers, allowing
 - **Flexible Configuration**: Use MelonPreferences to customize settings such as the listening port and debug level.
 - **Developer-Friendly**: Designed with simplicity in mind, allowing quick integration into your projects.
 
-![SampleUserInterface](https://i.imgur.com/vKwkLkQ.png)
+![SampleUserInterface](https://i.imgur.com/SFzaWUX.png)
+![SampleUserInterface2](https://i.imgur.com/zMIWMhI.png)
 
-Reveal Map button and Game Fully Initialized variable monitor were generated from this code:
+The Example Command button, Reveal Map button, and Game Fully Initialized variable monitor were generated from this code:
 ```csharp
+[CommandHandler("ExampleCommand")]
+public static void ExampleCommandHttp(HttpListenerResponse response, string Input1, string Input2 = "Default value")
+{
+    WickerServer.Instance.LogResponse(response, $"Returning back: {Input1} {Input2}");
+}
+
 [CommandHandler("revealMap")]
 public static void RevealMapHttp(HttpListenerResponse response)
 {
