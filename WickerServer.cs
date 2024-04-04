@@ -27,8 +27,10 @@ namespace SkInterface
         private const string COMMANDS_PATH  = "/commands";
         private const string GAME_VARIABLES_PATH    = "/game-variables";
         private const string FAVICON_PATH   = "/favicon.ico";
-        private const string INDEX_URL      = "https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/index.html";
-        private const string FAVICON_URL    = "https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/resources/favicon.ico";
+        private const string INDEX_URL      = @"https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/index.html";
+        private const string FAVICON_URL    = @"https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/resources/favicon.ico";
+        private const string userDataPath   = "WickerREST";
+        private const string resourcesPath  = "WickerREST/resources";
 
         private Dictionary<string, (MethodInfo Method, string[] Parameters, string Category)>? commandHandlers;
         private Dictionary<string, Func<object>>? gameVariableMethods;
@@ -39,6 +41,7 @@ namespace SkInterface
 
         // Instance of this class
         private static WickerServer?            instance;
+
         private MelonPreferences_Category?      modCategory;
         private MelonPreferences_Entry<int>?    listeningPort;
         private MelonPreferences_Entry<int>?    debugLevel;
@@ -63,22 +66,23 @@ namespace SkInterface
         public override void OnInitializeMelon()
         {
             Instance = this;
-            var discoveryStopwatch = new Stopwatch();
 
-            var discoveryThread = new Thread(() =>
-            {
-                LogMessage("Starting handler and variable discovery thread...", 1);
-                discoveryStopwatch.Start();
-                DiscoverHandlersAndVariables(); // Discover command handlers and game variables
-                discoveryStopwatch.Stop();
-                LogMessage($"Handler and variable discovery thread completed in {discoveryStopwatch.ElapsedMilliseconds}ms.", 1);
-            });
-            discoveryThread.Start();
-            HarmonyInstance.PatchAll();
+            var configDirectoryPath = Path.Combine(MelonEnvironment.UserDataDirectory, userDataPath);
+            Directory.CreateDirectory(configDirectoryPath);
+
+            var resourceDirectoryPath = Path.Combine(MelonEnvironment.UserDataDirectory, resourcesPath);
+            Directory.CreateDirectory(resourceDirectoryPath);
+
             modCategory = MelonPreferences.CreateCategory("WickerREST");
-            modCategory.SetFilePath(Path.Combine(MelonEnvironment.UserDataDirectory, "WickerREST", "WickerREST.cfg"));
+            modCategory.SetFilePath(Path.Combine(configDirectoryPath, "WickerREST.cfg"));
+
             listeningPort = modCategory.CreateEntry("ListeningPort", 6103, description: "Port server will listen on");
             debugLevel = modCategory.CreateEntry("DebugLevel", 0, description: "Debug level for logging (0: None, 1: Raised, 2: Verbose)");
+
+            if (!File.Exists(Path.Combine(configDirectoryPath, "WickerREST.cfg")))
+            {
+                MelonPreferences.Save();
+            }
 
             //Verify listening port is valid, otherwise set to default 6103. Notify it was reset
             if (listeningPort.Value < 1 || listeningPort.Value > 65535)
@@ -96,7 +100,17 @@ namespace SkInterface
                 MelonPreferences.Save();
             }
 
+            var discoveryThread = new Thread(() =>
+            {
+                LogMessage("Starting handler and variable discovery thread...", 1);
+                DiscoverHandlersAndVariables(); // Discover command handlers and game variables
+                LogMessage($"Handler and variable discovery thread completed.", 1);
+            });
             StartServer(listeningPort.Value);
+
+            discoveryThread.Start();
+            HarmonyInstance.PatchAll();
+
 
             LoggerInstance.WriteLine(37);
             LogMessage($"Server initialized on port {listeningPort.Value}");
@@ -112,6 +126,7 @@ namespace SkInterface
 
             listener.Start();
             listenerThread = new Thread(() => HandleRequests(cancellationTokenSource.Token));
+            LogMessage("Starting listener thread...", 1);
             listenerThread?.Start(); // Start the listener thread
 
         }
@@ -165,7 +180,7 @@ namespace SkInterface
                         }
                         else if (request.Url.AbsolutePath == FAVICON_PATH)
                         {
-                            await ServeFavicon(response, Path.Combine(MelonEnvironment.UserDataDirectory, "WickerREST", "resources", "favicon.ico"));
+                            await ServeFavicon(response, Path.Combine(resourcesPath, "favicon.ico"));
                         }
                         else if (request.Url.AbsolutePath == COMMANDS_PATH)
                         {
@@ -281,7 +296,7 @@ namespace SkInterface
         private async System.Threading.Tasks.Task ServeHtmlPage(HttpListenerResponse response, string fileName)
         {
             var filePath = Path.Combine(MelonEnvironment.UserDataDirectory, "WickerREST", "resources", fileName);
-            await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/index.html");
+            await EnsureFileExists(filePath, INDEX_URL);
 
             if (File.Exists(filePath))
             {
@@ -296,7 +311,7 @@ namespace SkInterface
 
         private async System.Threading.Tasks.Task ServeFavicon(HttpListenerResponse response, string filePath)
         {
-            await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/resources/favicon.ico", true);
+            await EnsureFileExists(filePath, FAVICON_URL, true);
 
             var fileInfo = new FileInfo(filePath);
             if (fileInfo.Exists)
