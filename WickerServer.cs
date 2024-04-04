@@ -1,15 +1,11 @@
-﻿using System.Net;
-using System.Threading;
-using HarmonyLib;
-using Il2Cpp;
-using UnityEngine;
-using MelonLoader;
+﻿using MelonLoader;
 using MelonLoader.Utils;
-using System.Collections;
-using System.Reflection;
 using Newtonsoft.Json;
+using System.Collections;
+using System.Net;
+using System.Reflection;
 using System.Web;
-using System.Diagnostics;
+using UnityEngine;
 
 namespace SkInterface
 {
@@ -109,9 +105,6 @@ namespace SkInterface
             StartServer(listeningPort.Value);
 
             discoveryThread.Start();
-            HarmonyInstance.PatchAll();
-
-
             LoggerInstance.WriteLine(37);
             LogMessage($"Server initialized on port {listeningPort.Value}");
             LogMessage($"Navigate to: http://localhost:{listeningPort.Value}/");
