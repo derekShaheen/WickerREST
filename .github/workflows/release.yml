@@ -47,7 +47,7 @@ jobs:
       id: extract_version
       shell: pwsh
       run: |
-        $assemblyInfoPath = '${{env.SOLUTION_FILE_PATH}}\YourProjectPath\Properties\AssemblyInfo.cs'
+        $assemblyInfoPath = '${{env.SOLUTION_FILE_PATH}}\Properties\AssemblyInfo.cs'
         $assemblyInfo = Get-Content $assemblyInfoPath
         $versionLine = $assemblyInfo | Select-String -Pattern '\[assembly: MelonInfo\(typeof\(.*\), ".*", "(.*)", ".*"\)\]'
         $version = $versionLine.Matches.Groups[1].Value
