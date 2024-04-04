@@ -66,7 +66,7 @@ Modify the `WickerREST.cfg` file generated in the `UserData` directory to adjust
 ```ini
 [WickerREST]
 ListeningPort=6103
-DebugLevel=1 # 0: None, 1: Error, 2: Verbose
+DebugLevel=1 # 0: None, 1: Raised, 2: Verbose
 ```
 
 ## Creating Commands
