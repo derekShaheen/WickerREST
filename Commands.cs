@@ -28,20 +28,13 @@ namespace SkInterface
         [CommandHandler("ping", "Main")]
         public static void PingHttp(HttpListenerResponse response)
         {
-            SkInterface.Instance.LogResponse(response, "Pong!");
+            WickerServer.Instance.LogResponse(response, "Pong!");
         }
 
         [CommandHandler("pingg")]
         public static void PingHttp2(HttpListenerResponse response)
         {
-            SkInterface.Instance.LogResponse(response, "Pong!");
-        }
-
-        [CommandHandler("ping")]
-        public static void PingHttp3(HttpListenerResponse response)
-        {
-            //SkInterface.Instance.LogResponse(response, "Pong2!");
-            SkInterface.Instance.LoggerInstance.Msg("Pong2!");
+            WickerServer.Instance.LogResponse(response, "Pong!");
         }
 
         [CommandHandler("inputTest", "Main")]
@@ -55,13 +48,13 @@ namespace SkInterface
             responseContent.AppendLine("input2: '" + input2 + "'");
 
             // Now send the accumulated response content as one response
-            SkInterface.Instance.LogResponse(response, responseContent.ToString());
+            WickerServer.Instance.LogResponse(response, responseContent.ToString());
         }
 
         [CommandHandler("secondInputTest", "Main")]
         public static void InputTest2HTTP(HttpListenerResponse response, string input)
         {
-            SkInterface.Instance.LogResponse(response, "Received:" + " '" + input + "'");
+            WickerServer.Instance.LogResponse(response, "Received:" + " '" + input + "'");
         }
 
         [GameVariable("GameReadyToPlay")]
@@ -109,7 +102,7 @@ namespace SkInterface
 
         private static void RevealMap(HttpListenerResponse response)
         {
-            if (SkInterface.Instance == null)
+            if (WickerServer.Instance == null)
             {
                 return;
             }
@@ -117,13 +110,13 @@ namespace SkInterface
             if (GameManager.Instance == null || !GameManager.gameFullyInitialized)
             {
 
-                SkInterface.Instance.LogResponse(response, "Must be in-game to reveal map!");
+                WickerServer.Instance.LogResponse(response, "Must be in-game to reveal map!");
                 return;
             }
 
             if (GameManager.Instance != null && GameManager.gameFullyInitialized)
             {
-                SkInterface.Instance.LogResponse(response, "Revealing map...");
+                WickerServer.Instance.LogResponse(response, "Revealing map...");
                 GameManager.Instance.cameraManager.fogOfWarEffect.mFog.enabled = false;
                 ActiveConfig.isRevealed = true;
 

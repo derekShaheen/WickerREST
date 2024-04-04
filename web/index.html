@@ -35,56 +35,57 @@
 
 </head>
 <body class="bg-dark text-light">
-    <div class="container">
-        <div class="container text-center">
-            <div class="row bg-info bg-opacity-10 border border-primary">
+    <div class="container mt-2">
+        <div class="container">
+            <div class="row bg-info bg-opacity-10 border border-primary text-center">
                 <div class="col-1 mt-1">
                     <a href="#" onclick="window.location.reload(true);">
-                        <img src="https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/resources/h512.png" class="img-thumbnail">
+                        <img src="https://raw.githubusercontent.com/derekShaheen/SkRESTClient/main/web/resources/h512.png" class="img-thumbnail" style="min-width: 45px; min-height: 45px;">
                     </a>
                 </div>
-                <div class="col">
+                <div class="col mt-1">
                     <h5 class="--bs-secondary-color">Unity WickerREST</h5>
                     <h1 class="--bs-primary"></h1>
                 </div>
             </div>
-        </div>
-
-        <div class="row mt-2 mb-2">
-            <div class="col d-flex">
-                <!-- Button to toggle the collapsible -->
-                <button class="btn btn-success" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#gameVariablesCollapse" aria-expanded="false"
-                        aria-controls="gameVariablesCollapse" id="toggleGameVariablesBtn"
-                        style="display: none;">
-                    View Game Variables
-                </button>
-            </div>
-            <div class="col d-flex align-items-center">
-                <h5 id="connectionStatus" class="text-warning">Checking server connection...</h5>
-            </div>
-            <div class="col col-sm-3 d-flex align-items-center">
-                <div class="form-check" id="flashCheck">
-                    <input class="form-check-input" type="checkbox" value="" id="flashCheckbox" checked>
-                    <label class="form-check-label" for="flashCheckbox">
-                        Flash on Update
-                    </label>
+            <div class="row mt-2 mb-2">
+                <div class="col d-flex">
+                    <!-- Button to toggle the collapsible -->
+                    <button class="btn btn-success" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#gameVariablesCollapse" aria-expanded="false"
+                            aria-controls="gameVariablesCollapse" id="toggleGameVariablesBtn"
+                            style="display: none;">
+                        View Game Variables
+                    </button>
+                </div>
+                <div class="col d-flex align-items-center">
+                    <h5 id="connectionStatus" class="text-warning">Checking server connection...</h5>
+                </div>
+                <div class="col col-sm-3 d-flex align-items-center">
+                    <div class="form-check" id="flashCheck">
+                        <input class="form-check-input" type="checkbox" value="" id="flashCheckbox" checked>
+                        <label class="form-check-label" for="flashCheckbox">
+                            Flash on Update
+                        </label>
+                    </div>
+                </div>
+                <div class="col col-sm-3 d-flex align-items-center">
+                    <input type="number" id="columnControlInput" class="form-control" value="2" min="1" max="6">
                 </div>
             </div>
-            <div class="col col-sm-3 d-flex align-items-center">
-                <input type="number" id="columnControlInput" class="form-control" value="2" min="1" max="6">
+            <div class="row mt-2 mb-2">
+                <!-- Collapsible container for game variables -->
+                <div class="collapse" id="gameVariablesCollapse">
+                    <div id="gameVariables" class="p-3 bg-info bg-opacity-10 border border-info rounded"></div>
+                </div>
+                <div id="commands"></div>
+                <div class="console-container mt-2">
+                    <h4 class="text-warning">Command Output</h4>
+                    <div id="commandOutput" class="console-output p-1 bg-dark text-white border" style="height: 200px; overflow-y: scroll;"></div>
+                </div>
             </div>
+        </div>
 
-        </div>
-        <!-- Collapsible container for game variables -->
-        <div class="collapse" id="gameVariablesCollapse">
-            <div id="gameVariables" class="p-3 bg-info bg-opacity-10 border border-info rounded"></div>
-        </div>
-        <div id="commands"></div>
-        <div class="console-container mt-2">
-            <h4 class="text-warning">Command Output</h4>
-            <div id="commandOutput" class="console-output p-1 bg-dark text-white" style="height: 200px; overflow-y: scroll; border: 1px solid #666;"></div>
-        </div>
     </div>
 
     <!-- Response Modal -->
@@ -240,8 +241,8 @@
 
             // Create a clickable link element
             const commandLink = document.createElement('a');
-            commandLink.href = '#'; // Using '#' for now; this will be handled by JavaScript
-            commandLink.textContent = `[${timestamp}] ${command.substring(1)} ► ${data || 'No response data.'}`;
+            commandLink.href = commandStr; // Using '#' for now; this will be handled by JavaScript
+            commandLink.textContent = `[${timestamp}] ${command.substring(1)} → ${data || 'Command executed.'}`;
             commandLink.classList.add('command-link');
             commandLink.style.color = 'inherit'; // Use the same color as the parent element
             commandLink.style.textDecoration = 'none'; // Remove underline

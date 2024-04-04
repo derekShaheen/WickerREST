@@ -9,6 +9,7 @@ using System.Collections;
 using System.Reflection;
 using Newtonsoft.Json;
 using System.Web;
+using System.Diagnostics;
 
 namespace SkInterface
 {
@@ -21,28 +22,35 @@ namespace SkInterface
         public const string DownloadLink = "";
     }
 
-    public class SkInterface : MelonMod
+    public class WickerServer : MelonMod
     {
+        private const string COMMANDS_PATH  = "/commands";
+        private const string GAME_VARIABLES_PATH    = "/game-variables";
+        private const string FAVICON_PATH   = "/favicon.ico";
+        private const string INDEX_URL      = "https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/index.html";
+        private const string FAVICON_URL    = "https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/resources/favicon.ico";
+
         private Dictionary<string, (MethodInfo Method, string[] Parameters, string Category)>? commandHandlers;
         private Dictionary<string, Func<object>>? gameVariableMethods;
 
-        private HttpListener? listener;
-        private Thread? listenerThread;
+        private HttpListener?   listener;
+        private Thread?         listenerThread;
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         // Instance of this class
-        private static SkInterface? instance;
-        private MelonPreferences_Category? modCategory;
-        private MelonPreferences_Entry<int>? listeningPort;
+        private static WickerServer?            instance;
+        private MelonPreferences_Category?      modCategory;
+        private MelonPreferences_Entry<int>?    listeningPort;
+        private MelonPreferences_Entry<int>?    debugLevel;
 
         // Singleton pattern
-        public static SkInterface Instance
+        public static WickerServer Instance
         {
             get
             {
                 if (instance == null)
                 {
-                    instance = new SkInterface();
+                    instance = new WickerServer();
                 }
                 return instance;
             }
@@ -55,30 +63,44 @@ namespace SkInterface
         public override void OnInitializeMelon()
         {
             Instance = this;
+            var discoveryStopwatch = new Stopwatch();
 
             var discoveryThread = new Thread(() =>
             {
+                LogMessage("Starting handler and variable discovery thread...", 1);
+                discoveryStopwatch.Start();
                 DiscoverHandlersAndVariables(); // Discover command handlers and game variables
+                discoveryStopwatch.Stop();
+                LogMessage($"Handler and variable discovery thread completed in {discoveryStopwatch.ElapsedMilliseconds}ms.", 1);
             });
             discoveryThread.Start();
             HarmonyInstance.PatchAll();
-            modCategory = MelonPreferences.CreateCategory("SkREST");
-            modCategory.SetFilePath(Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", "SkRESTClient.cfg"));
+            modCategory = MelonPreferences.CreateCategory("WickerREST");
+            modCategory.SetFilePath(Path.Combine(MelonEnvironment.UserDataDirectory, "WickerREST", "WickerREST.cfg"));
             listeningPort = modCategory.CreateEntry("ListeningPort", 6103, description: "Port server will listen on");
+            debugLevel = modCategory.CreateEntry("DebugLevel", 0, description: "Debug level for logging (0: None, 1: Raised, 2: Verbose)");
 
             //Verify listening port is valid, otherwise set to default 6103. Notify it was reset
             if (listeningPort.Value < 1 || listeningPort.Value > 65535)
             {
                 listeningPort.Value = 6103;
-                LoggerInstance.Msg("Listening port was invalid. Reset to default 6103.");
+                LogMessage("Listening port was invalid. Reset to default 6103.");
+                MelonPreferences.Save();
+            }
+
+            //Verify debug level is valid, otherwise set to default 0. Notify it was reset
+            if (debugLevel.Value < 0 || debugLevel.Value > 2)
+            {
+                debugLevel.Value = 0;
+                LogMessage("Debug level was invalid. Reset to default 0.");
                 MelonPreferences.Save();
             }
 
             StartServer(listeningPort.Value);
 
             LoggerInstance.WriteLine(37);
-            LoggerInstance.Msg($"Server initialized on port {listeningPort.Value}");
-            LoggerInstance.Msg($"Navigate to: http://localhost:{listeningPort.Value}/");
+            LogMessage($"Server initialized on port {listeningPort.Value}");
+            LogMessage($"Navigate to: http://localhost:{listeningPort.Value}/");
             LoggerInstance.WriteLine(37);
         }
 
@@ -111,7 +133,6 @@ namespace SkInterface
 
                     try
                     {
-                        //LoggerInstance.Msg($"Request: {request.Url.AbsolutePath}");
                         if (request.HttpMethod == "GET" && commandHandlers.TryGetValue(request.Url.AbsolutePath, out var handlerTuple))
                         {
                             MethodInfo methodToInvoke = handlerTuple.Method;
@@ -131,7 +152,6 @@ namespace SkInterface
                                     var paramValue = query[paramInfo.Name];
                                     // Convert paramValue to the correct type as needed
                                     parameters[i] = Convert.ChangeType(paramValue, paramInfo.ParameterType);
-                                    // Log param info
                                 }
                             }
                             MelonCoroutines.Start(ExecuteOnMainThread(() =>
@@ -143,11 +163,11 @@ namespace SkInterface
                         {
                             await ServeHtmlPage(response, "index.html");
                         }
-                        else if (request.Url.AbsolutePath == "/favicon.ico")
+                        else if (request.Url.AbsolutePath == FAVICON_PATH)
                         {
-                            await ServeFavicon(response, Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", "resources", "favicon.ico"));
+                            await ServeFavicon(response, Path.Combine(MelonEnvironment.UserDataDirectory, "WickerREST", "resources", "favicon.ico"));
                         }
-                        else if (request.Url.AbsolutePath == "/commands")
+                        else if (request.Url.AbsolutePath == COMMANDS_PATH)
                         {
                             if (commandHandlers != null && commandHandlers.Count > 0)
                             {
@@ -178,8 +198,7 @@ namespace SkInterface
                                 SendResponse(response, @"", 200);
                             }
                         }
-
-                        else if (request.Url.AbsolutePath == "/game-variables")
+                        else if (request.Url.AbsolutePath == GAME_VARIABLES_PATH)
                         {
                             if (gameVariableMethods != null && gameVariableMethods.Count > 0)
                             {
@@ -191,15 +210,12 @@ namespace SkInterface
                                 }).ToDictionary(kvp => kvp.VariableName, kvp => kvp.Value);
 
                                 var json = JsonConvert.SerializeObject(variableValues);
-                                //Log json output
-                                //LoggerInstance.Msg(json);
                                 SendResponse(response, json, 200, "application/json");
                             } else
                             {
                                 SendResponse(response, "No game variables found.", 200);
                             }
                         }
-
                         else
                         {
                             SendResponse(response, "Invalid request.", 404);
@@ -209,7 +225,7 @@ namespace SkInterface
                     catch (Exception ex)
                     {
                         if (ex is OperationCanceledException) break;
-                        LoggerInstance.Msg($"Server error: {ex.Message}");
+                        LogMessage($"Server error: {ex.Message}", 1);
                         SendResponse(response, $"Server error. {ex.Message}", 500);
                     }
                 }
@@ -233,30 +249,30 @@ namespace SkInterface
                     {
                         if (isBinary)
                         {
-                            LoggerInstance.Msg($"Attempting binary download of {url}");
+                            LogMessage($"Attempting binary download of {url}", 1);
                             var response = await httpClient.GetAsync(url);
                             if (response.IsSuccessStatusCode)
                             {
                                 var contentBytes = await response.Content.ReadAsByteArrayAsync();
                                 await File.WriteAllBytesAsync(filePath, contentBytes);
-                                LoggerInstance.Msg($"Downloaded binary file to {filePath}");
+                                LogMessage($"Downloaded binary file to {filePath}", 1);
                             }
                             else
                             {
-                                LoggerInstance.Msg($"Failed to download binary file. Status code: {response.StatusCode}");
+                                LogMessage($"Failed to download binary file. Status code: {response.StatusCode}", 1);
                             }
                         }
                         else
                         {
                             var contentString = await httpClient.GetStringAsync(url);
                             await File.WriteAllTextAsync(filePath, contentString);
-                            LoggerInstance.Msg($"Downloaded text file to {filePath}");
+                            LogMessage($"Downloaded text file to {filePath}", 1);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    LoggerInstance.Msg($"Exception during file download: {ex.Message}");
+                    LogMessage($"Exception during file download: {ex.Message}", 1);
                 }
             }
         }
@@ -264,7 +280,7 @@ namespace SkInterface
 
         private async System.Threading.Tasks.Task ServeHtmlPage(HttpListenerResponse response, string fileName)
         {
-            var filePath = Path.Combine(MelonEnvironment.UserDataDirectory, "SkRESTClient", "resources", fileName);
+            var filePath = Path.Combine(MelonEnvironment.UserDataDirectory, "WickerREST", "resources", fileName);
             await EnsureFileExists(filePath, "https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/index.html");
 
             if (File.Exists(filePath))
@@ -306,7 +322,6 @@ namespace SkInterface
                                            // Make sure not to close the response here if it's managed elsewhere
             }
         }
-
 
         private IEnumerator ExecuteOnMainThread(Action action)
         {
@@ -365,8 +380,7 @@ namespace SkInterface
             }
             catch (ReflectionTypeLoadException ex)
             {
-                // Handle loading errors if necessary
-                //LoggerInstance.Msg($"Error during discovery: {ex.LoaderExceptions.FirstOrDefault()?.Message}");
+                //LoggerInstance.Msg($"Error during discovery: {ex.LoaderExceptions.FirstOrDefault()?.Message}", 2);
             }
 
             // Notify discovery completion
@@ -389,25 +403,34 @@ namespace SkInterface
         {
             if (commandHandlers == null || commandHandlers.Count == 0)
             {
-                LoggerInstance.Msg("No command handlers found.");
+                LogMessage("No command handlers found.");
             }
             else
             {
-                LoggerInstance.Msg($"Discovered {commandHandlers.Count} command handlers.");
+                LogMessage($"Discovered {commandHandlers.Count} command handlers.");
             }
             if (gameVariableMethods == null || gameVariableMethods.Count == 0)
             {
-                LoggerInstance.Msg("No game variable monitors found.");
+                LogMessage("No game variable monitors found.");
             }
             else
             {
-                LoggerInstance.Msg($"Discovered {gameVariableMethods.Count} game variable monitors.");
+                LogMessage($"Discovered {gameVariableMethods.Count} game variable monitors.");
+            }
+        }
+
+        public void LogMessage(string message, int requiredDebugLevel = 0)
+        {
+            // Check if current debug level allows logging this message
+            if (debugLevel.Value >= requiredDebugLevel)
+            {
+                LoggerInstance.Msg(message);
             }
         }
 
         public void LogResponse(HttpListenerResponse response, string message)
         {
-            LoggerInstance.Msg(message);
+            LogMessage("Sending to client: " + message, 2);
             SendResponse(response, message);
         }
 
@@ -416,7 +439,7 @@ namespace SkInterface
             base.OnApplicationQuit();
             if (listener != null)
             {
-                LoggerInstance.Msg("Shutting down REST client...");
+                LogMessage("Shutting down REST client...");
                 listener.Stop(); // Stop the listener
                 listener.Close(); // Clean up listener resources
                 cancellationTokenSource.Cancel(); // Signal cancellation
