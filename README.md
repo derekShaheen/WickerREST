@@ -19,7 +19,7 @@ To integrate WickerREST into your Unity game, follow these steps:
 
 2. **Plugin Installation**: On it's own, this doesn't provide anything for you. You'll also need a plugin for WickerREST for your game. Download this plugin and simply place it in the /Mods/ folder.
 
-3. **Accessing the Web Interface**: Start your game, and navigate to `http://localhost:<ListeningPort>/` in your web browser to access the command interface and game variable monitor. **Default is port 6103.**
+3. **Accessing the Web Interface**: Start your game, and navigate to `http://localhost:6103/` in your web browser to access the command interface and game variable monitor. **Default is port 6103.**
 
 ## Getting Started (Developers)
 
