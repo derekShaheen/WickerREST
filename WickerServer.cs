@@ -99,13 +99,12 @@ namespace Wicker
 
             var discoveryThread = new Thread(() =>
             {
-                LogMessage("Starting handler and variable discovery thread...", 1);
                 DiscoverHandlersAndVariables(); // Discover command handlers and game variables
-                LogMessage($"Handler and variable discovery thread completed.", 1);
             });
+            discoveryThread.Start();
+
             StartServer(listeningPort.Value);
 
-            discoveryThread.Start();
             LoggerInstance.WriteLine(37);
             LogMessage($"Server initialized on port {listeningPort.Value}");
             LogMessage($"Navigate to: http://localhost:{listeningPort.Value}/");
@@ -432,7 +431,8 @@ namespace Wicker
         public void LogMessage(string message, int requiredDebugLevel = 0)
         {
             // Check if current debug level allows logging this message
-            if (debugLevel.Value >= requiredDebugLevel)
+            if ((debugLevel == null && requiredDebugLevel == 0) 
+                    || (debugLevel != null && debugLevel.Value >= requiredDebugLevel))
             {
                 LoggerInstance.Msg(message);
             }
