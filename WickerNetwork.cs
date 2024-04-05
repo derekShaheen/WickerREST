@@ -101,10 +101,11 @@ namespace WickerREST
                                     parameters[i] = Convert.ChangeType(paramValue, paramInfo.ParameterType);
                                 }
                             }
-                            MelonCoroutines.Start(WickerServer.Instance.ExecuteOnMainThread(() =>
+                            // Queue the action to be executed on the main thread
+                            WickerServer.Instance.ExecuteOnMainThread(() =>
                             {
                                 methodToInvoke.Invoke(null, parameters);
-                            }));
+                            }, response);
                         }
                         else if (request.Url.AbsolutePath == "/")
                         {
@@ -169,7 +170,7 @@ namespace WickerREST
                         {
                             SendResponse(response, "Invalid request.", 404);
                         }
-                        response.OutputStream.Close();
+                        //response.OutputStream.Close();
                     }
                     catch (Exception ex)
                     {
@@ -250,17 +251,35 @@ namespace WickerREST
 
         public void SendResponse(HttpListenerResponse response, string message, int statusCode = 200, string contentType = "text/plain")
         {
-            response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
-            response.Headers.Add("Pragma", "no-cache");
-            //
-            response.StatusCode = statusCode;
-            response.ContentType = contentType;
-            var buffer = System.Text.Encoding.UTF8.GetBytes(message);
-            response.ContentLength64 = buffer.Length;
-            response.OutputStream.Write(buffer, 0, buffer.Length);
+            try
+            {
+                // Attempt to set response properties and write the response
+                response.StatusCode = statusCode;
+                response.ContentType = contentType;
+                var buffer = System.Text.Encoding.UTF8.GetBytes(message);
+                response.ContentLength64 = buffer.Length;
+                response.OutputStream.Write(buffer, 0, buffer.Length);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // This exception is thrown if we try to modify the response after it's been sent
+                // Log the exception or handle it as needed
+                WickerServer.Instance.LogMessage($"Attempted to write to an already closed response: {ex.Message}");
+            }
+            finally
+            {
+                // Always ensure the output stream is closed in a finally block to avoid resource leaks
+                try
+                {
+                    response.OutputStream.Close();
+                }
+                catch (Exception ex)
+                {
+                    // Handle or log exceptions thrown from trying to close the output stream
+                    WickerServer.Instance.LogMessage($"Error closing response output stream: {ex.Message}");
+                }
+            }
         }
-
-
         public void LogResponse(HttpListenerResponse response, string message)
         {
             // Replace newline characters with HTML line breaks to preserve formatting in the web page

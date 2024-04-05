@@ -26,6 +26,8 @@ namespace Wicker
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
+        private Queue<(Action, HttpListenerResponse)> mainThreadActions = new Queue<(Action, HttpListenerResponse)>();
+
         private MelonPreferences_Category?      modCategory;
         private MelonPreferences_Entry<int>?    listeningPort;
         private MelonPreferences_Entry<int>?    debugLevel;
@@ -95,16 +97,46 @@ namespace Wicker
 
             WickerNetwork.Instance.StartServer(listeningPort.Value, cancellationTokenSource);
 
-            LoggerInstance.WriteLine(37);
+            LoggerInstance.WriteLine(39);
             LogMessage($"Server initialized on port {listeningPort.Value}");
             LogMessage($"Navigate to: http://localhost:{listeningPort.Value}/");
-            LoggerInstance.WriteLine(37);
+            LoggerInstance.WriteLine(39);
         }
 
-        internal IEnumerator ExecuteOnMainThread(Action action)
+        public override void OnUpdate()
         {
-            action.Invoke();
-            yield return null;
+            try
+            {
+                while (mainThreadActions.Count > 0)
+                {
+                    var (action, response) = mainThreadActions.Dequeue();
+                    try
+                    {
+                        action.Invoke();
+                    }
+                    finally
+                    {
+                        // Try to close the response, catch
+                        try
+                        {
+                            response.Close();
+                        }
+                        catch (Exception ex)
+                        {
+                            //
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerInstance.Error(ex.ToString());
+            }
+        }
+
+        internal void ExecuteOnMainThread(Action action, HttpListenerResponse response)
+        {
+            mainThreadActions.Enqueue((action, response));
         }
 
         public void LogMessage(string message, int requiredDebugLevel = 0)
