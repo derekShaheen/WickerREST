@@ -15,14 +15,14 @@ namespace Wicker
         public const string Name = "WickerREST";
         public const string Description = "WickerREST";
         public const string Author = "Skrip";
-        public const string Version = "0.91.0";
+        public static string Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
         public const string DownloadLink = "";
     }
 
     public class WickerServer : MelonMod
     {
-        internal const string userDataPath   = "WickerREST";
-        internal const string resourcesPath  = "WickerREST/resources";
+        internal static string userDataPath   = "WickerREST";
+        internal static string resourcesPath  = "WickerREST/resources";
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
@@ -54,19 +54,19 @@ namespace Wicker
         {
             Instance = this;
 
-            var configDirectoryPath = Path.Combine(MelonEnvironment.UserDataDirectory, userDataPath);
-            Directory.CreateDirectory(configDirectoryPath);
+            userDataPath = Path.Combine(MelonEnvironment.UserDataDirectory, userDataPath);
+            Directory.CreateDirectory(userDataPath);
 
-            var resourceDirectoryPath = Path.Combine(MelonEnvironment.UserDataDirectory, resourcesPath);
-            Directory.CreateDirectory(resourceDirectoryPath);
+            resourcesPath = Path.Combine(MelonEnvironment.UserDataDirectory, resourcesPath);
+            Directory.CreateDirectory(resourcesPath);
 
             modCategory = MelonPreferences.CreateCategory("WickerREST");
-            modCategory.SetFilePath(Path.Combine(configDirectoryPath, "WickerREST.cfg"));
+            modCategory.SetFilePath(Path.Combine(userDataPath, "WickerREST.cfg"));
 
             listeningPort = modCategory.CreateEntry("ListeningPort", 6103, description: "Port server will listen on");
             debugLevel = modCategory.CreateEntry("DebugLevel", 0, description: "Debug level for logging (0: None, 1: Raised, 2: Verbose)");
 
-            if (!File.Exists(Path.Combine(configDirectoryPath, "WickerREST.cfg")))
+            if (!File.Exists(Path.Combine(userDataPath, "WickerREST.cfg")))
             {
                 MelonPreferences.Save();
             }
@@ -119,8 +119,8 @@ namespace Wicker
 
         public override void OnApplicationQuit()
         {
-            base.OnApplicationQuit();
             WickerNetwork.Instance.StopServer();
+            base.OnApplicationQuit();
         }
     }
 }

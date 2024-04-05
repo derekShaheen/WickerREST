@@ -206,7 +206,7 @@ namespace WickerREST
 
         private async System.Threading.Tasks.Task ServeFavicon(HttpListenerResponse response, string filePath)
         {
-            await Utilities.EnsureFileExists(filePath, FAVICON_URL, true);
+            Utilities.EnsureFileExists(filePath, FAVICON_URL, true);
 
             var fileInfo = new FileInfo(filePath);
             if (fileInfo.Exists)
@@ -263,8 +263,10 @@ namespace WickerREST
 
         public void LogResponse(HttpListenerResponse response, string message)
         {
-            WickerServer.Instance.LogMessage("Sending to client: " + message, 2);
-            SendResponse(response, message);
+            // Replace newline characters with HTML line breaks to preserve formatting in the web page
+            string formattedMessage = message.Replace(Environment.NewLine, "<br>");
+            SendResponse(response, formattedMessage, 200, "text/html");
         }
+
     }
 }
