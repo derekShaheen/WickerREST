@@ -1,142 +1,106 @@
-﻿//using HarmonyLib;
-//using Il2Cpp;
-//using System.Net;
-//using System.Text;
-//using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using Wicker;
 
-// Example commands and variables
+namespace WickerREST
+{
+    internal class Commands
+    {
+        // Instance of this class
+        private static Commands? instance;
 
-//namespace SkInterface
-//{
-//    public static class ActiveConfig
-//    {
-//        public static bool isRevealed = false;
-//        public static bool isPlaying = false;
-//    }
+        // Singleton pattern
+        public static Commands Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new Commands();
+                }
+                return instance;
+            }
+            private set
+            {
+                instance = value;
+            }
+        }
 
-//    public static class CommandActions
-//    {
-//        [CommandHandler("revealMap", "Test")]
-//        public static void RevealMapHttp(HttpListenerResponse response)
-//        {
-//            RevealMap(response);
-//        }
+        public Dictionary<string, (MethodInfo Method, string[] Parameters, string Category)>? CommandHandlers { get => commandHandlers; set => commandHandlers = value; }
+        public Dictionary<string, Func<object>>? GameVariableMethods { get => gameVariableMethods; set => gameVariableMethods = value; }
 
-//        [CommandHandler("ping", "Main")]
-//        public static void PingHttp(HttpListenerResponse response)
-//        {
-//            WickerServer.Instance.LogResponse(response, "Pong!");
-//        }
+        private Dictionary<string, (MethodInfo Method, string[] Parameters, string Category)>? commandHandlers;
+        private Dictionary<string, Func<object>>? gameVariableMethods;
 
-//        [CommandHandler("pingg")]
-//        public static void PingHttp2(HttpListenerResponse response)
-//        {
-//            WickerServer.Instance.LogResponse(response, "Pong!");
-//        }
+        public void DiscoverHandlersAndVariables()
+        {
+            CommandHandlers = new Dictionary<string, (MethodInfo, string[], string)>();
+            GameVariableMethods = new Dictionary<string, Func<object>>();
 
-//        [CommandHandler("inputTest", "Main")]
-//        public static void InputTestHTTP(HttpListenerResponse response, string TestCase, string input = "test", string input2 = "testlols")
-//        {
-//            // Write output of each var
-//            StringBuilder responseContent = new StringBuilder();
-//            // Append output of each var to the response content
-//            responseContent.AppendLine("TestCase: '" + TestCase + "'");
-//            responseContent.AppendLine("input: '" + input + "'");
-//            responseContent.AppendLine("input2: '" + input2 + "'");
+            try
+            {
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    foreach (var type in assembly.GetTypes())
+                    {
+                        foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+                        {
+                            // Discover Command Handlers
+                            var commandAttribute = method.GetCustomAttribute<CommandHandlerAttribute>();
+                            if (commandAttribute != null)
+                            {
+                                string path = Utilities.EnsureUniqueKey(CommandHandlers.Keys, commandAttribute.Path);
+                                var parameters = method.GetParameters()
+                                                        .Where(param => param.ParameterType != typeof(HttpListenerResponse))
+                                                        .Select(param => param.Name)
+                                                        .ToArray();
+                                CommandHandlers[path] = (method, parameters, commandAttribute.Category ?? string.Empty);
+                            }
 
-//            // Now send the accumulated response content as one response
-//            WickerServer.Instance.LogResponse(response, responseContent.ToString());
-//        }
+                            // Discover Game Variables
+                            var gameVariableAttribute = method.GetCustomAttribute<GameVariableAttribute>();
+                            if (gameVariableAttribute != null && method.ReturnType != typeof(void) && method.GetParameters().Length == 0)
+                            {
+                                string variableName = Utilities.EnsureUniqueKey(GameVariableMethods.Keys, gameVariableAttribute.VariableName);
+                                Func<object> valueProvider = () => method.Invoke(null, null);
+                                GameVariableMethods[variableName] = valueProvider;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                //LoggerInstance.Msg($"Error during discovery: {ex.LoaderExceptions.FirstOrDefault()?.Message}", 2);
+            }
 
-//        [CommandHandler("secondInputTest", "Main")]
-//        public static void InputTest2HTTP(HttpListenerResponse response, string input)
-//        {
-//            WickerServer.Instance.LogResponse(response, "Received:" + " '" + input + "'");
-//        }
+            // Notify discovery completion
+            OnCommandHandlersDiscovered();
+        }
 
-//        [GameVariable("GameReadyToPlay")]
-//        public static string GetGameReadyToPlay()
-//        {
-//            return GameManager.gameReadyToPlay.ToString();
-//        }
-
-//        [GameVariable("IsGameLoaded")]
-//        public static string GetGameIsLoaded()
-//        {
-//            if (GameManager.Instance != null)
-//                return GameManager.Instance.isLoadedGame.ToString();
-
-//            return "False";
-//        }
-//        [GameVariable("GameFullyInitialized")]
-//        public static string GetGmeFullyInitialized()
-//        {
-//            return GameManager.gameFullyInitialized.ToString();
-//        }
-
-//        private static int relicCount = 0;
-
-//        [GameVariable("FoodProduced")]
-//        public static string GetRelicCount()
-//        {
-//            if (GameManager.Instance == null)
-//            {
-//                return "-1";
-//            }
-
-//            //if (GameManager.Instance != null && relicCount <= 0)
-//            //{
-//            //    var relicResources = UnityEngine.Object.FindObjectsOfType<Villager>();
-//            //    relicCount = relicResources.Length;
-//            //}
-
-//            return GameManager.Instance.villageStats.GetCurrentTrackedFoodProduced().Count.ToString();
-//        }
-
-
-//        public static bool IsPlaying { get => ActiveConfig.isPlaying; set => ActiveConfig.isPlaying = value; }
-//        public static bool IsRevealed { get => ActiveConfig.isRevealed; set => ActiveConfig.isRevealed = value; }
-
-//        private static void RevealMap(HttpListenerResponse response)
-//        {
-//            if (WickerServer.Instance == null)
-//            {
-//                return;
-//            }
-
-//            if (GameManager.Instance == null || !GameManager.gameFullyInitialized)
-//            {
-
-//                WickerServer.Instance.LogResponse(response, "Must be in-game to reveal map!");
-//                return;
-//            }
-
-//            if (GameManager.Instance != null && GameManager.gameFullyInitialized)
-//            {
-//                WickerServer.Instance.LogResponse(response, "Revealing map...");
-//                GameManager.Instance.cameraManager.fogOfWarEffect.mFog.enabled = false;
-//                ActiveConfig.isRevealed = true;
-
-//                var relicResources = UnityEngine.Object.FindObjectsOfType<RelicExtractionResource>();
-//                foreach (var relic in relicResources)
-//                {
-//                    relic.availableForExtraction = true;
-//                }
-//            }
-//        }
-
-//        [HarmonyPatch(typeof(FOWSystem), "IsExplored")]
-//        class Patch_FOWSystem_IsExplored
-//        {
-//            static bool Prefix(Vector3 pos, ref bool __result)
-//            {
-//                if (ActiveConfig.isRevealed)
-//                {
-//                    __result = true; // Set the result to true
-//                    return false; // Skip the original method
-//                }
-//                return true; // Continue with the original method
-//            }
-//        }
-//    }
-//}
+        public void OnCommandHandlersDiscovered()
+        {
+            if (CommandHandlers == null || CommandHandlers.Count == 0)
+            {
+                WickerServer.Instance.LogMessage("No command handlers found.");
+            }
+            else
+            {
+                WickerServer.Instance.LogMessage($"Discovered {CommandHandlers.Count} command handlers.");
+            }
+            if (GameVariableMethods == null || GameVariableMethods.Count == 0)
+            {
+                WickerServer.Instance.LogMessage("No game variable monitors found.");
+            }
+            else
+            {
+                WickerServer.Instance.LogMessage($"Discovered {GameVariableMethods.Count} game variable monitors.");
+            }
+        }
+    }
+}
