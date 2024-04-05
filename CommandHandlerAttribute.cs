@@ -11,12 +11,14 @@ namespace Wicker
     {
         public string Path { get; }
         public string Category { get; }
+        public string Description { get; }
 
         // Adjust the constructor to accept category as an optional parameter
-        public CommandHandlerAttribute(string path, string category = "Miscellaneous")
+        public CommandHandlerAttribute(string path, string category = "Miscellaneous", string description = "")
         {
             Path = "/" + path;
             Category = category;
+            Description = description;
         }
     }
 

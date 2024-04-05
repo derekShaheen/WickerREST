@@ -15,7 +15,7 @@ namespace Wicker
         public const string Name = "WickerREST";
         public const string Description = "WickerREST";
         public const string Author = "Skrip";
-        public static string Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        public const string Version = "0.93.0";
         public const string DownloadLink = "";
     }
 

@@ -86,7 +86,7 @@ namespace WickerREST
                             var parameterInfos = methodToInvoke.GetParameters();
 
                             // Assuming all parameters are strings for simplicity; adjust as needed.
-                            object[] parameters = new object[parameterInfos.Length];
+                            object[]? parameters = new object[parameterInfos.Length];
 
                             // Parse query parameters
                             var query = HttpUtility.ParseQueryString(request.Url.Query);
@@ -98,7 +98,8 @@ namespace WickerREST
                                     var paramInfo = parameterInfos[i];
                                     var paramValue = query[paramInfo.Name];
                                     // Convert paramValue to the correct type as needed
-                                    parameters[i] = Convert.ChangeType(paramValue, paramInfo.ParameterType);
+                                    if(paramValue != null)
+                                        parameters[i] = Convert.ChangeType(paramValue, paramInfo.ParameterType);
                                 }
                             }
                             // Queue the action to be executed on the main thread
@@ -117,35 +118,7 @@ namespace WickerREST
                         }
                         else if (request.Url.AbsolutePath == COMMANDS_PATH)
                         {
-                            if (Commands.Instance.CommandHandlers != null && Commands.Instance.CommandHandlers.Count > 0)
-                            {
-                                //await EnsureFileExists("/dwyl", DWYL_URL, true);
-                                var commandsInfo = Commands.Instance.CommandHandlers.Select(handler => new {
-                                    Path = handler.Key,
-                                    Parameters = handler.Value.Method.GetParameters()
-                                                    .Select(p => new {
-                                                        p.Name,
-                                                        Type = p.ParameterType.Name,
-                                                        DefaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null
-                                                    })
-                                                    .ToArray(),
-                                    Category = handler.Value.Category
-                                }).ToArray();
-
-                                var productName = Application.productName;
-                                var responseContent = new
-                                {
-                                    productName = productName,
-                                    commands = commandsInfo,
-                                };
-
-                                var commandsJson = JsonConvert.SerializeObject(responseContent);
-                                SendResponse(response, commandsJson, statusCode: 200, contentType: "application/json");
-                            }
-                            else
-                            {
-                                SendResponse(response, @"", statusCode: 200);
-                            }
+                            ServeCommandHandlers(response);
                         }
                         else if (request.Url.AbsolutePath == GAME_VARIABLES_PATH)
                         {
@@ -155,7 +128,7 @@ namespace WickerREST
                                 var variableValues = Commands.Instance.GameVariableMethods.Select(kvp => new
                                 {
                                     VariableName = kvp.Key,
-                                    Value = kvp.Value.Invoke().ToString()
+                                    Value = kvp.Value?.Invoke()?.ToString()
                                 }).ToDictionary(kvp => kvp.VariableName, kvp => kvp.Value);
 
                                 var json = JsonConvert.SerializeObject(variableValues);
@@ -184,8 +157,42 @@ namespace WickerREST
             {
                 if (ex is HttpListenerException || ex is ObjectDisposedException)
                 {
-                    //User is trying to close the server improperly. Handle on application quit.
+                    //User is trying to close the server improperly. Suppress here, handle on application quit.
                 }
+            }
+        }
+
+        private void ServeCommandHandlers(HttpListenerResponse response)
+        {
+            if (Commands.Instance.CommandHandlers != null && Commands.Instance.CommandHandlers.Count > 0)
+            {
+                //await EnsureFileExists("/dwyl", DWYL_URL, true);
+                var commandsInfo = Commands.Instance.CommandHandlers.Select(handler => new {
+                    Path = handler.Key,
+                    Parameters = handler.Value.Method.GetParameters()
+                                    .Select(p => new {
+                                        p.Name,
+                                        Type = p.ParameterType.Name,
+                                        DefaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null
+                                    })
+                                    .ToArray(),
+                    Category = handler.Value.Category,
+                    Description = handler.Value.Description
+                }).ToArray();
+
+                var productName = Application.productName;
+                var responseContent = new
+                {
+                    productName = productName,
+                    commands = commandsInfo,
+                };
+
+                var commandsJson = JsonConvert.SerializeObject(responseContent);
+                SendResponse(response, commandsJson, statusCode: 200, contentType: "application/json");
+            }
+            else
+            {
+                SendResponse(response, @"", statusCode: 200);
             }
         }
 

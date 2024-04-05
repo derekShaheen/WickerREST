@@ -31,16 +31,16 @@ namespace WickerREST
             }
         }
 
-        public Dictionary<string, (MethodInfo Method, string[] Parameters, string Category)>? CommandHandlers { get => commandHandlers; set => commandHandlers = value; }
-        public Dictionary<string, Func<object>>? GameVariableMethods { get => gameVariableMethods; set => gameVariableMethods = value; }
+        public Dictionary<string, (MethodInfo Method, string?[] Parameters, string Category, string Description)>? CommandHandlers { get => commandHandlers; set => commandHandlers = value; }
+        public Dictionary<string, Func<object?>>? GameVariableMethods { get => gameVariableMethods; set => gameVariableMethods = value; }
 
-        private Dictionary<string, (MethodInfo Method, string[] Parameters, string Category)>? commandHandlers;
-        private Dictionary<string, Func<object>>? gameVariableMethods;
+        private Dictionary<string, (MethodInfo Method, string?[] Parameters, string Category, string Description)>? commandHandlers;
+        private Dictionary<string, Func<object?>>? gameVariableMethods;
 
         public void DiscoverHandlersAndVariables()
         {
-            CommandHandlers = new Dictionary<string, (MethodInfo, string[], string)>();
-            GameVariableMethods = new Dictionary<string, Func<object>>();
+            CommandHandlers = new Dictionary<string, (MethodInfo, string?[], string, string)>();
+            GameVariableMethods = new Dictionary<string, Func<object?>>();
 
             try
             {
@@ -59,7 +59,7 @@ namespace WickerREST
                                                         .Where(param => param.ParameterType != typeof(HttpListenerResponse))
                                                         .Select(param => param.Name)
                                                         .ToArray();
-                                CommandHandlers[path] = (method, parameters, commandAttribute.Category ?? string.Empty);
+                                CommandHandlers[path] = (method, parameters, commandAttribute.Category ?? string.Empty, commandAttribute.Description ?? string.Empty);
                             }
 
                             // Discover Game Variables
@@ -67,8 +67,11 @@ namespace WickerREST
                             if (gameVariableAttribute != null && method.ReturnType != typeof(void) && method.GetParameters().Length == 0)
                             {
                                 string variableName = Utilities.EnsureUniqueKey(GameVariableMethods.Keys, gameVariableAttribute.VariableName);
-                                Func<object> valueProvider = () => method.Invoke(null, null);
-                                GameVariableMethods[variableName] = valueProvider;
+                                Func<object?> valueProvider = () => method.Invoke(null, null);
+                                if(valueProvider != null)
+                                {
+                                    GameVariableMethods[variableName] = valueProvider;
+                                }
                             }
                         }
                     }

@@ -1,4 +1,4 @@
 ﻿using MelonLoader;
 
-[assembly: MelonInfo(typeof(Wicker.WickerServer), "WickerREST", "0.93.0", "Skrip")]
+[assembly: MelonInfo(typeof(Wicker.WickerServer), Wicker.BuildInfo.Name, Wicker.BuildInfo.Version, Wicker.BuildInfo.Author)]
 [assembly: MelonGame("Crate Entertainment", "Farthest Frontier")]
