@@ -116,14 +116,14 @@ namespace Wicker
                     }
                     finally
                     {
-                        // Try to close the response, catch
+                        // Try to close the response in case the action failed or didn't send a response
                         try
                         {
                             response.Close();
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                            //
+                            // No need to log this exception, it's a cleanup in case this didn't already happen
                         }
                     }
                 }

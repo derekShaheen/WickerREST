@@ -241,7 +241,7 @@
             // Create a clickable link element
             const commandLink = document.createElement('a');
             commandLink.href = commandStr; // Using '#' for now; this will be handled by JavaScript
-            commandLink.textContent = `[${timestamp}] ${command.substring(1)} → ${data || 'Command executed.'}`;
+            commandLink.innerHTML = `[${timestamp}] ${command.substring(1)} → ${data || 'Command executed.'}`;
             commandLink.classList.add('command-link');
             commandLink.style.color = 'inherit'; // Use the same color as the parent element
             commandLink.style.textDecoration = 'none'; // Remove underline
