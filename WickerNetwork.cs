@@ -190,7 +190,7 @@ namespace WickerREST
 
         private async System.Threading.Tasks.Task ServeHtmlPage(HttpListenerResponse response, string fileName)
         {
-            var filePath = Path.Combine(MelonEnvironment.UserDataDirectory, "WickerREST", "resources", fileName);
+            var filePath = Path.Combine(WickerServer.resourcesPath, fileName);
             await Utilities.EnsureFileExists(filePath, INDEX_URL);
 
             if (File.Exists(filePath))
@@ -206,7 +206,7 @@ namespace WickerREST
 
         private async System.Threading.Tasks.Task ServeFavicon(HttpListenerResponse response, string filePath)
         {
-            Utilities.EnsureFileExists(filePath, FAVICON_URL, true);
+            await Utilities.EnsureFileExists(filePath, FAVICON_URL, true, true);
 
             var fileInfo = new FileInfo(filePath);
             if (fileInfo.Exists)

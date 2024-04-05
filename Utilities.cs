@@ -9,7 +9,7 @@ namespace WickerREST
 {
     internal static class Utilities
     {
-        internal static async System.Threading.Tasks.Task EnsureFileExists(string filePath, string url, bool isBinary = false)
+        internal static async System.Threading.Tasks.Task EnsureFileExists(string filePath, string url, bool isAsync = true, bool isBinary = false)
         {
             if (!File.Exists(filePath))
             {
@@ -19,12 +19,17 @@ namespace WickerREST
                     {
                         if (isBinary)
                         {
-                            WickerServer.Instance.LogMessage($"Attempting binary download of {url}", 1);
                             var response = await httpClient.GetAsync(url);
                             if (response.IsSuccessStatusCode)
                             {
                                 var contentBytes = await response.Content.ReadAsByteArrayAsync();
-                                await File.WriteAllBytesAsync(filePath, contentBytes);
+                                if(isAsync)
+                                {
+                                    await File.WriteAllBytesAsync(filePath, contentBytes); 
+                                }
+                                else { 
+                                    File.WriteAllBytes(filePath, contentBytes);
+                                }
                                 WickerServer.Instance.LogMessage($"Downloaded binary file to {filePath}", 1);
                             }
                             else
@@ -35,7 +40,14 @@ namespace WickerREST
                         else
                         {
                             var contentString = await httpClient.GetStringAsync(url);
-                            await File.WriteAllTextAsync(filePath, contentString);
+                            if (isAsync)
+                            {
+                                await File.WriteAllTextAsync(filePath, contentString);
+                            }
+                            else
+                            {
+                                File.WriteAllText(filePath, contentString);
+                            }
                             WickerServer.Instance.LogMessage($"Downloaded text file to {filePath}", 1);
                         }
                     }
