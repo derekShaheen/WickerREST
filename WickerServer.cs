@@ -22,7 +22,7 @@ namespace Wicker
     public class WickerServer : MelonMod
     {
         internal static string userDataPath   = "WickerREST";
-        internal static string resourcesPath  = "WickerREST/resources";
+        internal static string resourcesPath  = userDataPath + "/resources";
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
