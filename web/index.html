@@ -317,12 +317,21 @@
                                 col.className = `col-${12 / numberOfColumns}`; // Bootstrap class for column sizing
 
                                 const card = document.createElement('div');
-                                card.setAttribute('data-variable', variableName);
                                 card.className = 'card mt-2';
+                                card.setAttribute('data-variable', variableName)
+                                console.log("1" + variableName);
                                 const cardBody = document.createElement('div');
                                 cardBody.className = 'card-body';
                                 const titleizedCard = titleize(variableName);
                                 cardBody.textContent = `${titleizedCard}: ${value}`;
+
+                                // Flash card if value changed
+                                if (prevGameVariables[variableName] !== value && flashEnabled) {
+                                    card.classList.add('flash-update');
+                                    // Schedule the removal of the class
+                                    setTimeout(() => card.classList.remove('flash-update'), 1000);
+                                }
+
                                 card.appendChild(cardBody);
 
                                 col.appendChild(card);
@@ -335,20 +344,22 @@
                                 }
                             });
 
-                        Object.entries(data).forEach(([variableName, value]) => {
-                            // Check if the variable's value has changed
-                            if (prevGameVariables[variableName] !== value) {
-                                const variableElement = document.querySelector(`[data-variable="${variableName}"]`);
-                                if (variableElement && flashEnabled) {
-                                    variableElement.classList.add('flash-update');
+                        //Object.entries(data).forEach(([variableName, value]) => {
+                        //    // Check if the variable's value has changed
+                        //    if (prevGameVariables[variableName] !== value) {
+                        //        const variableElement = document.querySelector(`[data-variable="${variableName}"]`);
+                        //        console.log("2" + variableName);
+                        //        console.log("3" + variableElement);
+                        //        if (variableElement && flashEnabled) {
+                        //            variableElement.classList.add('flash-update');
 
-                                    // Remove the class after animation ends
-                                    setTimeout(() => {
-                                        variableElement.classList.remove('flash-update');
-                                    }, 1000);
-                                }
-                            }
-                        });
+                        //            // Remove the class after animation ends
+                        //            setTimeout(() => {
+                        //                variableElement.classList.remove('flash-update');
+                        //            }, 1000);
+                        //        }
+                        //    }
+                        //});
 
                         prevGameVariables = { ...data };
 
