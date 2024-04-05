@@ -140,11 +140,11 @@ namespace WickerREST
                                 };
 
                                 var commandsJson = JsonConvert.SerializeObject(responseContent);
-                                SendResponse(response, commandsJson, 200, "application/json");
+                                SendResponse(response, commandsJson, statusCode: 200, contentType: "application/json");
                             }
                             else
                             {
-                                SendResponse(response, @"", 200);
+                                SendResponse(response, @"", statusCode: 200);
                             }
                         }
                         else if (request.Url.AbsolutePath == GAME_VARIABLES_PATH)
@@ -159,16 +159,16 @@ namespace WickerREST
                                 }).ToDictionary(kvp => kvp.VariableName, kvp => kvp.Value);
 
                                 var json = JsonConvert.SerializeObject(variableValues);
-                                SendResponse(response, json, 200, "application/json");
+                                SendResponse(response, json, statusCode: 200, contentType: "application/json");
                             }
                             else
                             {
-                                SendResponse(response, "No game variables found.", 200);
+                                SendResponse(response, "No game variables found.", statusCode: 200);
                             }
                         }
                         else
                         {
-                            SendResponse(response, "Invalid request.", 404);
+                            SendResponse(response, "Invalid request.", statusCode: 404);
                         }
                         //response.OutputStream.Close();
                     }
@@ -176,7 +176,7 @@ namespace WickerREST
                     {
                         if (ex is OperationCanceledException) break;
                         WickerServer.Instance.LogMessage($"Server error: {ex.Message}", 1);
-                        SendResponse(response, $"Server error. {ex.Message}", 500);
+                        SendResponse(response, $"Server error. {ex.Message}", statusCode: 500);
                     }
                 }
             }
@@ -197,11 +197,11 @@ namespace WickerREST
             if (File.Exists(filePath))
             {
                 var pageContent = File.ReadAllBytes(filePath);
-                SendResponse(response, System.Text.Encoding.UTF8.GetString(pageContent), 200, "text/html");
+                SendResponse(response, System.Text.Encoding.UTF8.GetString(pageContent), statusCode: 200, contentType: "text/html");
             }
             else
             {
-                SendResponse(response, "Page not found.", 404);
+                SendResponse(response, "Page not found.", statusCode: 404);
             }
         }
 
@@ -249,7 +249,7 @@ namespace WickerREST
             }
         }
 
-        public void SendResponse(HttpListenerResponse response, string message, int statusCode = 200, string contentType = "text/plain")
+        public void SendResponse(HttpListenerResponse response, string message, bool closeResponse = true, int statusCode = 200, string contentType = "text/plain")
         {
             try
             {
@@ -271,7 +271,10 @@ namespace WickerREST
                 // Always ensure the output stream is closed in a finally block to avoid resource leaks
                 try
                 {
-                    response.OutputStream.Close();
+                    if (closeResponse)
+                    {
+                        response.OutputStream.Close();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -280,11 +283,12 @@ namespace WickerREST
                 }
             }
         }
+
         public void LogResponse(HttpListenerResponse response, string message)
         {
             // Replace newline characters with HTML line breaks to preserve formatting in the web page
             string formattedMessage = message.Replace(Environment.NewLine, "<br>");
-            SendResponse(response, formattedMessage, 200, "text/html");
+            SendResponse(response, formattedMessage, statusCode: 200, contentType: "text/html");
         }
 
     }
