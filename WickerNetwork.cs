@@ -110,7 +110,7 @@ namespace WickerREST
                         }
                         else if (request.Url.AbsolutePath == "/")
                         {
-                            await ServeHtmlPage(response, "index.html");
+                            await ServeHtmlPage(response, WickerServer.Instance.FrontEnd != null ? WickerServer.Instance.FrontEnd.Value : "index.html");
                         }
                         else if (request.Url.AbsolutePath == FAVICON_PATH)
                         {

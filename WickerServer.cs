@@ -24,6 +24,7 @@ namespace Wicker
         private Queue<(Action, HttpListenerResponse)> mainThreadActions = new Queue<(Action, HttpListenerResponse)>();
 
         private MelonPreferences_Category?      modCategory;
+        private MelonPreferences_Entry<string>? frontEnd;
         private MelonPreferences_Entry<int>?    listeningPort;
         private MelonPreferences_Entry<int>?    debugLevel;
 
@@ -47,6 +48,8 @@ namespace Wicker
             }
         }
 
+        public MelonPreferences_Entry<string>? FrontEnd { get => frontEnd; set => frontEnd = value; }
+
         public override void OnInitializeMelon()
         {
             Instance = this;
@@ -60,6 +63,7 @@ namespace Wicker
             modCategory = MelonPreferences.CreateCategory("WickerREST");
             modCategory.SetFilePath(Path.Combine(userDataPath, "WickerREST.cfg"));
 
+            FrontEnd = modCategory.CreateEntry("FrontEnd", "index.html", description: "Specify the file for the front end to use (default, index.html). These files by default are in ..\\UserData\\WickerREST\\resources\\");
             listeningPort = modCategory.CreateEntry("ListeningPort", 6103, description: "Port server will listen on");
             debugLevel = modCategory.CreateEntry("DebugLevel", 0, description: "Debug level for logging (0: None, 1: Raised, 2: Verbose)");
 
