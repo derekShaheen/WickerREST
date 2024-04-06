@@ -186,6 +186,14 @@
                 input.id = 'input-' + param.Name;
                 input.setAttribute('data-parameter', param.Name);
 
+                // Add event listener for Enter key
+                input.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); // Prevent the default action to stop form submission
+                        submitModal(command); // Function to simulate the submit button click
+                    }
+                });
+
                 // Set default value if available
                 if (param.DefaultValue !== null) {
                     input.value = param.DefaultValue;
@@ -200,27 +208,13 @@
             const submitButton = document.createElement('button');
             submitButton.className = 'btn btn-block btn-primary';
             submitButton.textContent = 'Submit';
-            submitButton.onclick = () => {
-                const inputs = modalBody.querySelectorAll('input');
-                const inputValues = Array.from(inputs).reduce((acc, input) => {
-                    const paramName = input.getAttribute('data-parameter');
-                    acc[paramName] = input.value;
-                    return acc;
-                }, {});
-
-                const modalElement = document.getElementById('responseModal');
-                const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                modalInstance.hide();
-
-                sendCommandWithParameters(command, inputValues);
-            };
+            submitButton.onclick = () => submitModal(command);
             modalBody.appendChild(submitButton);
 
             const modalElement = document.getElementById('responseModal');
             const modalInstance = new bootstrap.Modal(modalElement);
             modalInstance.show();
         }
-
 
         function sendCommandWithParameters(command, parameters) {
             // Construct a query string where keys are parameter names
@@ -233,6 +227,21 @@
             fetch(`${commandStr}`)
                 .then(response => response.text())
                 .then(data => displayResponse(command, commandStr, data));
+        }
+
+        function submitModal(command) {
+            const inputs = document.getElementById('modalBody').querySelectorAll('input');
+            const inputValues = Array.from(inputs).reduce((acc, input) => {
+                const paramName = input.getAttribute('data-parameter');
+                acc[paramName] = input.value;
+                return acc;
+            }, {});
+
+            const modalElement = document.getElementById('responseModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            modalInstance.hide();
+
+            sendCommandWithParameters(command, inputValues);
         }
 
         function displayResponse(command, commandStr, data) {
@@ -319,7 +328,6 @@
                                 const card = document.createElement('div');
                                 card.className = 'card mt-2';
                                 card.setAttribute('data-variable', variableName)
-                                console.log("1" + variableName);
                                 const cardBody = document.createElement('div');
                                 cardBody.className = 'card-body';
                                 const titleizedCard = titleize(variableName);
