@@ -229,7 +229,7 @@ namespace WickerREST
                     }
                     response.StatusCode = 200; // OK
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     //
                 }

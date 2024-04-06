@@ -22,7 +22,6 @@ namespace Wicker
         }
     }
 
-
     [AttributeUsage(AttributeTargets.Method)]
     public class GameVariableAttribute : Attribute
     {

@@ -77,7 +77,7 @@ namespace WickerREST
                     }
                 }
             }
-            catch (ReflectionTypeLoadException ex)
+            catch (ReflectionTypeLoadException)
             {
                 //LoggerInstance.Msg($"Error during discovery: {ex.LoaderExceptions.FirstOrDefault()?.Message}", 2);
             }
