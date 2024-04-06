@@ -166,16 +166,37 @@ namespace WickerREST
         {
             if (Commands.Instance.CommandHandlers != null && Commands.Instance.CommandHandlers.Count > 0)
             {
-                //await EnsureFileExists("/dwyl", DWYL_URL, true);
                 var commandsInfo = Commands.Instance.CommandHandlers.Select(handler => new {
                     Path = handler.Key,
                     Parameters = handler.Value.Method.GetParameters()
-                                    .Select(p => new {
-                                        p.Name,
-                                        Type = p.ParameterType.Name,
-                                        DefaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null
-                                    })
-                                    .ToArray(),
+                                   .Select(p => {
+                                       Dictionary<string, string[]> autoCompleteOptions = new Dictionary<string, string[]>();
+                                       if (!string.IsNullOrEmpty(handler.Value.AutoCompleteMethodName))
+                                       {
+                                           MethodInfo? autoCompleteMethod;
+                                           try
+                                           {
+                                               autoCompleteMethod = handler.Value.Method.DeclaringType.GetMethod(handler.Value.AutoCompleteMethodName, BindingFlags.Static | BindingFlags.Public);
+                                               if (autoCompleteMethod != null && autoCompleteMethod.ReturnType == typeof(Dictionary<string, string[]>))
+                                               {
+                                                   autoCompleteOptions = (Dictionary<string, string[]>)autoCompleteMethod.Invoke(null, null);
+                                               }
+                                           }
+                                             catch (Exception ex)
+                                           {
+                                                  WickerServer.Instance.LogMessage($"Error invoking AutoComplete method: {ex.Message}");
+                                             }
+                                       }
+
+                                       return new
+                                       {
+                                           p.Name,
+                                           Type = p.ParameterType.Name,
+                                           DefaultValue = p.HasDefaultValue ? p.DefaultValue?.ToString() : null,
+                                           AutoCompleteOptions = autoCompleteOptions.ContainsKey(p.Name) ? autoCompleteOptions[p.Name] : Array.Empty<string>()
+                                       };
+                                   })
+                                   .ToArray(),
                     Category = handler.Value.Category,
                     Description = handler.Value.Description
                 }).ToArray();

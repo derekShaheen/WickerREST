@@ -94,7 +94,7 @@
         <img src="https://hits.dwyl.com/derekShaheen/WickerREST.svg" style="display: none" />
     </div>
 
-    <!-- Response Modal -->
+    <!-- Submission Modal -->
     <div class="modal modal-dialog-scrollable" id="responseModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
         <div class="modal-dialog">
             <div class="modal-content bg-dark text-light">
@@ -172,6 +172,7 @@
                 if (param.Name === 'response') {
                     return; // Skip 'response' parameter
                 }
+
                 const inputGroup = document.createElement('div');
                 inputGroup.className = 'input-group mb-3';
 
@@ -179,30 +180,78 @@
                 inputLabel.textContent = param.Name + ': ';
                 inputLabel.className = 'input-group-text';
 
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.className = 'form-control';
-                input.placeholder = param.Name;
-                input.id = 'input-' + param.Name;
-                input.setAttribute('data-parameter', param.Name);
+                let inputElement;
 
-                // Add event listener for Enter key
-                input.addEventListener('keypress', function (e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault(); // Prevent the default action to stop form submission
-                        submitModal(command); // Function to simulate the submit button click
-                    }
-                });
+                if (param.AutoCompleteOptions.length > 0) {
+                    // Create a select element for auto-complete options
+                    inputElement = document.createElement('select');
+                    inputElement.className = 'form-select';
+                    param.AutoCompleteOptions.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option;
+                        optionElement.textContent = option;
+                        inputElement.appendChild(optionElement);
+                    });
+                } else {
+                    // Create an input element for free text
+                    inputElement = document.createElement('input');
+                    inputElement.type = 'text';
+                    inputElement.className = 'form-control';
+                    inputElement.placeholder = param.Name;
+                    //if (param.DefaultValue !== null) {
+                    //    inputElement.value = param.DefaultValue;
+                    //}
+                }
 
                 // Set default value if available
                 if (param.DefaultValue !== null) {
-                    input.value = param.DefaultValue;
+                    inputElement.value = param.DefaultValue;
                 }
 
+                inputElement.id = 'input-' + param.Name;
+                inputElement.setAttribute('data-parameter', param.Name);
+
                 inputGroup.appendChild(inputLabel);
-                inputGroup.appendChild(input);
+                inputGroup.appendChild(inputElement);
                 modalBody.appendChild(inputGroup);
             });
+
+
+            //parameters.forEach(param => {
+            //    if (param.Name === 'response') {
+            //        return; // Skip 'response' parameter
+            //    }
+            //    const inputGroup = document.createElement('div');
+            //    inputGroup.className = 'input-group mb-3';
+
+            //    const inputLabel = document.createElement('label');
+            //    inputLabel.textContent = param.Name + ': ';
+            //    inputLabel.className = 'input-group-text';
+
+            //    const input = document.createElement('input');
+            //    input.type = 'text';
+            //    input.className = 'form-control';
+            //    input.placeholder = param.Name;
+            //    input.id = 'input-' + param.Name;
+            //    input.setAttribute('data-parameter', param.Name);
+
+            //    // Add event listener for Enter key
+            //    input.addEventListener('keypress', function (e) {
+            //        if (e.key === 'Enter') {
+            //            e.preventDefault(); // Prevent the default action to stop form submission
+            //            submitModal(command); // Function to simulate the submit button click
+            //        }
+            //    });
+
+            //    // Set default value if available
+            //    if (param.DefaultValue !== null) {
+            //        input.value = param.DefaultValue;
+            //    }
+
+            //    inputGroup.appendChild(inputLabel);
+            //    inputGroup.appendChild(input);
+            //    modalBody.appendChild(inputGroup);
+            //});
 
             // Add a submit button to the modal
             const submitButton = document.createElement('button');
@@ -230,7 +279,7 @@
         }
 
         function submitModal(command) {
-            const inputs = document.getElementById('modalBody').querySelectorAll('input');
+            const inputs = document.getElementById('modalBody').querySelectorAll('input, select');
             const inputValues = Array.from(inputs).reduce((acc, input) => {
                 const paramName = input.getAttribute('data-parameter');
                 acc[paramName] = input.value;

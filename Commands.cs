@@ -31,15 +31,15 @@ namespace WickerREST
             }
         }
 
-        public Dictionary<string, (MethodInfo Method, string?[] Parameters, string Category, string Description)>? CommandHandlers { get => commandHandlers; set => commandHandlers = value; }
+        public Dictionary<string, (MethodInfo Method, string?[] Parameters, string Category, string Description, string AutoCompleteMethodName)>? CommandHandlers { get => commandHandlers; set => commandHandlers = value; }
         public Dictionary<string, Func<object?>>? GameVariableMethods { get => gameVariableMethods; set => gameVariableMethods = value; }
 
-        private Dictionary<string, (MethodInfo Method, string?[] Parameters, string Category, string Description)>? commandHandlers;
+        private Dictionary<string, (MethodInfo Method, string?[] Parameters, string Category, string Description, string AutoCompleteMethodName)>? commandHandlers;
         private Dictionary<string, Func<object?>>? gameVariableMethods;
 
         public void DiscoverHandlersAndVariables()
         {
-            CommandHandlers = new Dictionary<string, (MethodInfo, string?[], string, string)>();
+            CommandHandlers = new Dictionary<string, (MethodInfo, string?[], string, string, string AutoCompleteMethodName)>();
             GameVariableMethods = new Dictionary<string, Func<object?>>();
 
             try
@@ -59,7 +59,8 @@ namespace WickerREST
                                                         .Where(param => param.ParameterType != typeof(HttpListenerResponse))
                                                         .Select(param => param.Name)
                                                         .ToArray();
-                                CommandHandlers[path] = (method, parameters, commandAttribute.Category ?? string.Empty, commandAttribute.Description ?? string.Empty);
+                                // Initialize AutoCompleteOptions as an empty dictionary
+                                CommandHandlers[path] = (method, parameters, commandAttribute.Category ?? string.Empty, commandAttribute.Description ?? string.Empty, commandAttribute.AutoCompleteMethodName ?? string.Empty);
                             }
 
                             // Discover Game Variables
