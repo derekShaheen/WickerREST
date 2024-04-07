@@ -10,7 +10,7 @@ namespace Wicker
         public const string Name = "WickerREST";
         public const string Description = "WickerREST";
         public const string Author = "Skrip";
-        public const string Version = "0.95.0";
+        public const string Version = "0.95.1";
         public const string DownloadLink = "";
     }
 
@@ -138,6 +138,11 @@ namespace Wicker
             mainThreadActions.Enqueue((action, response));
         }
 
+        /// <summary>
+        /// Log a message to the console with debug level check
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="requiredDebugLevel"></param>
         public void LogMessage(string message, int requiredDebugLevel = 0)
         {
             // Check if current debug level allows logging this message

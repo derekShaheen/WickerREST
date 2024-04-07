@@ -346,11 +346,16 @@ namespace WickerREST
             }
         }
 
+        /// <summary>
+        /// Log a message to the response log. This will be sent on /heartbeat requests.
+        /// </summary>
+        /// <param name="message"></param>
         public void LogResponse(string message)
         {
             lock (_logLock)
             {
                 string formattedMessage = message.Replace(Environment.NewLine, "<br>");
+                formattedMessage = formattedMessage.Replace("\\n", "<br>");
                 _logEntries.Add(formattedMessage);
             }
         }

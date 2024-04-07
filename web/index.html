@@ -37,6 +37,22 @@
             font-style: normal;
             font-size: 14px;
         }
+
+        #commandOutput {
+            resize: vertical; /* Enables resizing */
+            overflow: auto; /* Keeps the content scrollable */
+            max-height: 512px; /* Set a maximum height */
+            min-height: 120px; /* Set a minimum height */
+        }
+
+        /* Style for the resize handler if you need to customize its appearance */
+        .resize-handle {
+            width: 10%;
+            height: 10px;
+            cursor: ns-resize; /* Change cursor to indicate resizing */
+            position: absolute;
+            bottom: 0;
+        }
     </style>
 
 </head>
@@ -87,7 +103,9 @@
                 <div id="commands"></div>
                 <div class="console-container mt-2">
                     <h4 class="text-warning">Command Output</h4>
-                    <div id="commandOutput" class="console-output p-1 bg-dark text-white border" style="height: 200px; overflow-y: scroll;"></div>
+                    <div id="commandOutput" class="console-output p-1 bg-dark text-white border" style="height:250px">
+                        <div class="resize-handle"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -216,43 +234,6 @@
                 modalBody.appendChild(inputGroup);
             });
 
-
-            //parameters.forEach(param => {
-            //    if (param.Name === 'response') {
-            //        return; // Skip 'response' parameter
-            //    }
-            //    const inputGroup = document.createElement('div');
-            //    inputGroup.className = 'input-group mb-3';
-
-            //    const inputLabel = document.createElement('label');
-            //    inputLabel.textContent = param.Name + ': ';
-            //    inputLabel.className = 'input-group-text';
-
-            //    const input = document.createElement('input');
-            //    input.type = 'text';
-            //    input.className = 'form-control';
-            //    input.placeholder = param.Name;
-            //    input.id = 'input-' + param.Name;
-            //    input.setAttribute('data-parameter', param.Name);
-
-            //    // Add event listener for Enter key
-            //    input.addEventListener('keypress', function (e) {
-            //        if (e.key === 'Enter') {
-            //            e.preventDefault(); // Prevent the default action to stop form submission
-            //            submitModal(command); // Function to simulate the submit button click
-            //        }
-            //    });
-
-            //    // Set default value if available
-            //    if (param.DefaultValue !== null) {
-            //        input.value = param.DefaultValue;
-            //    }
-
-            //    inputGroup.appendChild(inputLabel);
-            //    inputGroup.appendChild(input);
-            //    modalBody.appendChild(inputGroup);
-            //});
-
             // Add a submit button to the modal
             const submitButton = document.createElement('button');
             submitButton.className = 'btn btn-block btn-primary';
@@ -299,27 +280,57 @@
             // Format the current timestamp
             const timestamp = new Date().toLocaleTimeString();
 
+            // Determine if the message is a sent command or a received response
+            const isServerResponse = command.startsWith('[Server]');
+
             // Create a new div element for the response
             const responseContainer = document.createElement('div');
-            responseContainer.classList.add('command-response');
+            responseContainer.classList.add('command-response', 'p-2', 'rounded');
+            responseContainer.style.marginBottom = '10px';
+            responseContainer.style.width = '60%';
+            responseContainer.style.position = 'relative';
 
-            // Create a clickable link element
+            // Styling for sent command
+            if (!isServerResponse) {
+                responseContainer.classList.add('bg-primary', 'text-white');
+                responseContainer.style.right = '0';
+                responseContainer.style.marginLeft = 'auto';
+            } else { // Styling for received response
+                responseContainer.classList.add('bg-secondary', 'text-white');
+                responseContainer.style.left = '0';
+            }
+
+            // Create a span element for timestamp
+            const timestampSpan = document.createElement('span');
+            timestampSpan.style.fontSize = '0.8em';
+            timestampSpan.style.opacity = '0.8';
+            timestampSpan.textContent = `[${timestamp}] `;
+
+            // Create an anchor element for command content
             const commandLink = document.createElement('a');
-            commandLink.href = commandStr; // Using '#' for now; this will be handled by JavaScript
-            commandLink.innerHTML = `[${timestamp}] ${command} → ${data || 'Command sent!'}`;
-            commandLink.classList.add('command-link');
-            commandLink.style.color = 'inherit'; // Use the same color as the parent element
-            commandLink.style.textDecoration = 'none'; // Remove underline
-            commandLink.onclick = function (e) {
-                e.preventDefault(); // Prevent the default anchor action
-                executeCommandAgain(commandStr); // Function to execute the command again
-            };
+            commandLink.style.color = 'inherit'; // To keep text color consistent with the container
+            commandLink.style.textDecoration = 'none'; // Optionally remove underline from links
 
-            // Append the link to the response container
+            if (!isServerResponse) {
+                // For sent commands, show the command string as the link text
+                commandLink.href = commandStr; // Prevent navigation
+                commandLink.innerHTML = `Command sent → ${commandStr}`;
+                commandLink.onclick = function (e) {
+                    e.preventDefault(); // Prevent the default anchor action
+                    executeCommandAgain(commandStr); // Function to execute the command again
+                };
+            } else {
+                // For server responses, simply display the data without making it a link
+                commandLink.innerHTML = data || 'Command received';
+                // commandLink.href = 'javascript:void(0);';
+                // commandLink.onclick = function (e) {...};
+            }
+
+            // Append the timestamp and command content (as a link) to the response container
+            responseContainer.appendChild(timestampSpan);
             responseContainer.appendChild(commandLink);
 
             // Append the new div to the command output container
-            //commandOutput.appendChild(responseContainer);
             commandOutput.insertBefore(responseContainer, commandOutput.firstChild);
 
             // Scroll to the bottom of the command output container
@@ -570,6 +581,45 @@
             descriptionElement.innerHTML = `[${timestamp}] (${commandName}): ${description || 'No description has been provided for this command.'}`;
             commandOutput.insertBefore(descriptionElement, commandOutput.firstChild);
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const commandOutput = document.getElementById('commandOutput');
+            const resizeHandle = commandOutput.querySelector('.resize-handle');
+
+            let startY, startHeight;
+
+            resizeHandle.addEventListener('mousedown', function (e) {
+                startY = e.clientY;
+                startHeight = parseInt(document.defaultView.getComputedStyle(commandOutput).height, 10);
+                document.documentElement.addEventListener('mousemove', doDrag, false);
+                document.documentElement.addEventListener('mouseup', stopDrag, false);
+            });
+
+            function doDrag(e) {
+                commandOutput.style.height = (startHeight + e.clientY - startY) + 'px';
+            }
+
+            function stopDrag(e) {
+                // Remove the event listeners when dragging is finished
+                document.documentElement.removeEventListener('mousemove', doDrag, false);
+                document.documentElement.removeEventListener('mouseup', stopDrag, false);
+
+                // Save the new height to a cookie
+                //const newHeight = commandOutput.style.height;
+                //document.cookie = "commandOutputHeight=" + newHeight + "; SameSite=Lax; Path=/; max-age=31536000"; // Expires after 1 year
+            }
+
+            // Load the saved height from cookie
+            //const cookies = document.cookie.split(';').reduce((res, c) => {
+            //    const [key, val] = c.trim().split('=').map(decodeURIComponent);
+            //    return Object.assign(res, { [key]: val });
+            //}, {});
+
+            //if (cookies.commandOutputHeight) {
+            //    commandOutput.style.height = cookies.commandOutputHeight;
+            //}
+        });
+
 
         document.getElementById('columnControlInput').addEventListener('change', function () {
             const columnCount = this.value;

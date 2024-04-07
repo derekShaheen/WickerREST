@@ -21,15 +21,15 @@ Unity WickerREST is a powerful framework designed for Unity developers, allowing
 The Example Command button, Reveal Map button, and Game Fully Initialized variable monitor were generated from this code:
 ```csharp
 [CommandHandler("ExampleCommand")]
-public static void ExampleCommandHttp(HttpListenerResponse response, string Input1, string Input2 = "Default value")
+public static void ExampleCommandHttp(string Input1, string Input2 = "Default value")
 {
-    WickerServer.Instance.LogResponse(response, $"Returning back: {Input1} {Input2}");
+    WickerNetwork.Instance.LogResponse($"Returning back: {Input1} {Input2}");
 }
 
 [CommandHandler("revealMap")]
-public static void RevealMapHttp(HttpListenerResponse response)
+public static void RevealMapHttp()
 {
-    Processing.RevealMap(response);
+    Processing.RevealMap(); // WickerNetwork.Instance.LogResponse() can be used to send a response back to the user.
 }
 
 [GameVariable("GameFullyInitialized")]
@@ -61,18 +61,18 @@ To integrate WickerREST into your Unity project, follow these steps:
 
     ```csharp
     [CommandHandler("sayHello")]
-    public static void SayHelloHttp(HttpListenerResponse response)
+    public static void SayHelloHttp()
     {
-        WickerServer.Instance.SendResponse(response, "Hello, World!");
+        WickerNetwork.Instance.LogResponse("Hello, World!");
     }
     ```
     Parameters are automatically handled by the system and presented to the user in the web interface. Default values are passed through. As the web browser sends and receives strings, parameters after the response must all be of string data type.
 
     ```csharp
     [CommandHandler("sayInput")]
-    public static void SayInputHttp(HttpListenerResponse response, string input = "Hello World!")
+    public static void SayInputHttp(string input = "Hello World!")
     {
-        WickerServer.Instance.SendResponse(response, input);
+        WickerNetwork.Instance.LogResponse(input);
     }
     ```
 
@@ -102,10 +102,10 @@ Commands are created by annotating static methods with the CommandHandler attrib
 ```csharp
 
 [CommandHandler("increaseScore")]
-public static void IncreaseScoreHttp(HttpListenerResponse response, int amount = 10)
+public static void IncreaseScoreHttp(int amount = 10)
 {
     Game.Instance.IncreaseScore(amount);
-    WickerServer.Instance.SendResponse(response, $"Score increased by {amount}");
+    WickerNetwork.Instance.LogResponse($"Score increased by {amount}");
 }
 ```
 
