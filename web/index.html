@@ -314,7 +314,7 @@
             if (!isServerResponse) {
                 // For sent commands, show the command string as the link text
                 commandLink.href = commandStr; // Prevent navigation
-                commandLink.innerHTML = `Command sent → ${commandStr}`;
+                commandLink.innerHTML = `Command sent → ${commandStr.substring(1)}`;
                 commandLink.onclick = function (e) {
                     e.preventDefault(); // Prevent the default anchor action
                     executeCommandAgain(commandStr); // Function to execute the command again
