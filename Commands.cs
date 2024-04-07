@@ -56,7 +56,7 @@ namespace WickerREST
                             {
                                 string path = Utilities.EnsureUniqueKey(CommandHandlers.Keys, commandAttribute.Path);
                                 var parameters = method.GetParameters()
-                                                        .Where(param => param.ParameterType != typeof(HttpListenerResponse))
+                                                        //.Where(param => param.ParameterType != typeof(HttpListenerResponse))
                                                         .Select(param => param.Name)
                                                         .ToArray();
                                 // Initialize AutoCompleteOptions as an empty dictionary

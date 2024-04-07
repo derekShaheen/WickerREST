@@ -29,6 +29,9 @@ namespace WickerREST
         private const string FAVICON_URL = @"https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/resources/favicon.ico";
         private const string DWYL_URL = @"https://hits.dwyl.com/derekShaheen/WickerREST.svg";
 
+        private List<string> _logEntries = new List<string>();
+        private object _logLock = new object(); // For thread-safety
+
         // Instance of this class
         private static WickerNetwork? instance;
 
@@ -90,10 +93,10 @@ namespace WickerREST
 
                             // Parse query parameters
                             var query = HttpUtility.ParseQueryString(request.Url.Query);
-                            parameters[0] = response; // Pass the response object
-                            if (parameterInfos.Length > 1)
+                            //parameters[0] = response; // Pass the response object
+                            if (parameterInfos.Length > 0)
                             {
-                                for (int i = 1; i < parameterInfos.Length; i++)
+                                for (int i = 0; i < parameterInfos.Length; i++)
                                 {
                                     var paramInfo = parameterInfos[i];
                                     var paramValue = query[paramInfo.Name];
@@ -147,25 +150,29 @@ namespace WickerREST
             }
         }
 
+
         private void ServeHeartbeat(HttpListenerResponse response)
         {
-            if (Commands.Instance.GameVariableMethods != null && Commands.Instance.GameVariableMethods.Count > 0)
-            {
+            var logResults = _logEntries;
 
-                var variableValues = Commands.Instance.GameVariableMethods.Select(kvp => new
-                {
-                    VariableName = kvp.Key,
-                    Value = kvp.Value?.Invoke()?.ToString()
-                }).ToDictionary(kvp => kvp.VariableName, kvp => kvp.Value);
-
-                var json = JsonConvert.SerializeObject(variableValues);
-                SendResponse(response, json, statusCode: 200, contentType: "application/json");
-            }
-            else
+            var gameVariables = Commands.Instance.GameVariableMethods?.Select(kvp => new
             {
-                SendResponse(response, "No game variables found.", statusCode: 200);
-            }
+                VariableName = kvp.Key,
+                Value = kvp.Value?.Invoke()?.ToString()
+            }).ToDictionary(kvp => kvp.VariableName, kvp => kvp.Value) ?? new Dictionary<string, string>();
+
+            // Combine game variables and log results in one object
+            var heartbeatResponse = new
+            {
+                GameVariables = gameVariables,
+                LogResults = logResults
+            };
+
+            var json = JsonConvert.SerializeObject(heartbeatResponse);
+            SendResponse(response, json, statusCode: 200, contentType: "application/json");
+            logResults.Clear();
         }
+
 
         private void ServeCommandHandlers(HttpListenerResponse response)
         {
@@ -339,12 +346,21 @@ namespace WickerREST
             }
         }
 
-        public void LogResponse(HttpListenerResponse response, string message)
+        public void LogResponse(string message)
         {
-            // Replace newline characters with HTML line breaks to preserve formatting in the web page
-            string formattedMessage = message.Replace(Environment.NewLine, "<br>");
-            SendResponse(response, formattedMessage, statusCode: 200, contentType: "text/html");
+            lock (_logLock)
+            {
+                string formattedMessage = message.Replace(Environment.NewLine, "<br>");
+                _logEntries.Add(formattedMessage);
+            }
         }
+
+        //public void LogResponse(HttpListenerResponse response, string message)
+        //{
+        //    // Replace newline characters with HTML line breaks to preserve formatting in the web page
+        //    string formattedMessage = message.Replace(Environment.NewLine, "<br>");
+        //    SendResponse(response, formattedMessage, statusCode: 200, contentType: "text/html");
+        //}
 
     }
 }

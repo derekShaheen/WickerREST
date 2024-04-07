@@ -161,7 +161,7 @@
         function executeCommand(command) {
             fetch(command)
                 .then(response => response.text())
-                .then(data => displayResponse(command, command, data));
+                .then(data => displayResponse(command.substring(1), command, data));
         }
 
         function showModalForCommand(command, parameters) {
@@ -275,7 +275,7 @@
 
             fetch(`${commandStr}`)
                 .then(response => response.text())
-                .then(data => displayResponse(command, commandStr, data));
+                .then(data => displayResponse(command.substring(1), commandStr, data));
         }
 
         function submitModal(command) {
@@ -306,7 +306,7 @@
             // Create a clickable link element
             const commandLink = document.createElement('a');
             commandLink.href = commandStr; // Using '#' for now; this will be handled by JavaScript
-            commandLink.innerHTML = `[${timestamp}] ${command.substring(1)} → ${data || 'Command executed.'}`;
+            commandLink.innerHTML = `[${timestamp}] ${command} → ${data || 'Command sent!'}`;
             commandLink.classList.add('command-link');
             commandLink.style.color = 'inherit'; // Use the same color as the parent element
             commandLink.style.textDecoration = 'none'; // Remove underline
@@ -335,7 +335,7 @@
             // Re-fetch the command with its parameters
             fetch(commandWithParameters)
                 .then(response => response.text())
-                .then(data => displayResponse(command, commandWithParameters, data));
+                .then(data => displayResponse(command.substring(1), commandWithParameters, data));
         }
 
         let errorLogged = false;
@@ -359,6 +359,12 @@
                     return response.json();
                 })
                 .then(data => {
+                    // Handle log results
+                    const logResults = data.LogResults;
+                    logResults.forEach(log => displayResponse('[Server]', '/heartbeat', log));
+
+                    // Handle game variables
+                    const gameVariables = data.GameVariables;
                     const container = document.getElementById('gameVariables');
                     const flashEnabled = document.getElementById('flashCheckbox').checked;
                     const numberOfColumns = parseInt(document.getElementById('columnControlInput').value) || 1; // Default to 1 column
@@ -369,7 +375,7 @@
                         row.className = 'row';
 
                         // Create columns
-                        Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]))
+                        Object.entries(gameVariables).sort((a, b) => a[0].localeCompare(b[0]))
                             .forEach(([variableName, value], index) => {
                                 const col = document.createElement('div');
                                 col.className = `col-${12 / numberOfColumns}`; // Bootstrap class for column sizing
@@ -401,24 +407,7 @@
                                 }
                             });
 
-                        //Object.entries(data).forEach(([variableName, value]) => {
-                        //    // Check if the variable's value has changed
-                        //    if (prevGameVariables[variableName] !== value) {
-                        //        const variableElement = document.querySelector(`[data-variable="${variableName}"]`);
-                        //        console.log("2" + variableName);
-                        //        console.log("3" + variableElement);
-                        //        if (variableElement && flashEnabled) {
-                        //            variableElement.classList.add('flash-update');
-
-                        //            // Remove the class after animation ends
-                        //            setTimeout(() => {
-                        //                variableElement.classList.remove('flash-update');
-                        //            }, 1000);
-                        //        }
-                        //    }
-                        //});
-
-                        prevGameVariables = { ...data };
+                        prevGameVariables = { ...gameVariables };
 
                         // Add any remaining columns not appended in the forEach loop
                         if (row.hasChildNodes()) {
@@ -448,12 +437,15 @@
                     }
                     // Implement a retry logic after a delay
                     setTimeout(fetchHeartbeat, 5000); // Retry after 5 seconds
+                })
+                .finally(() => {
+                    setTimeout(fetchHeartbeat, 1000);
                 });
         }
 
         // Poll game variables
         fetchHeartbeat();
-        setInterval(fetchHeartbeat, 2000);
+        //setInterval(fetchHeartbeat, 2000);
 
         function updateConnectionStatus(isConnected) {
             const statusElement = document.getElementById('connectionStatus');
