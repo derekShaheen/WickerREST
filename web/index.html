@@ -444,6 +444,7 @@
                         document.getElementById('gameVariables').innerHTML = '';
                         document.getElementById('gameVariables').style.display = 'none';
                         document.getElementById('flashCheck').style.display = 'none';
+                        displayResponse("[Server]", "Heartbeat", "Lost connection to server.")
                         errorLogged = true; // Log the error once
                     }
                     // Implement a retry logic after a delay
