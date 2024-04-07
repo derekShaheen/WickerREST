@@ -294,7 +294,6 @@
             const responseContainer = document.createElement('div');
             responseContainer.classList.add('command-response', 'p-2', 'rounded');
             responseContainer.style.marginBottom = '10px';
-            responseContainer.style.width = '60%';
             responseContainer.style.position = 'relative';
 
             // Styling for sent command
@@ -302,7 +301,9 @@
                 responseContainer.classList.add('bg-primary', 'text-white');
                 responseContainer.style.right = '0';
                 responseContainer.style.marginLeft = 'auto';
+                responseContainer.style.width = '60%';
             } else { // Styling for received response
+                responseContainer.style.width = '75%';
                 responseContainer.classList.add('bg-secondary', 'text-white');
                 responseContainer.style.left = '0';
             }
