@@ -110,7 +110,7 @@ namespace WickerREST
                         }
                         else if (request.Url.AbsolutePath == "/")
                         {
-                            await ServeHtmlPage(response, WickerServer.Instance.FrontEnd != null ? WickerServer.Instance.FrontEnd.Value : "index.html");
+                            await ServeFrontEnd(response, WickerServer.Instance.FrontEnd != null ? WickerServer.Instance.FrontEnd.Value : "index.html");
                         }
                         else if (request.Url.AbsolutePath == FAVICON_PATH)
                         {
@@ -217,7 +217,29 @@ namespace WickerREST
             }
         }
 
-        private async System.Threading.Tasks.Task ServeHtmlPage(HttpListenerResponse response, string fileName)
+        /// <summary>
+        /// Serve an HTML page from the user data directory.
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public void ServeHTMLPage(HttpListenerResponse response, string fileName)
+        {
+            var filePath = Path.Combine(WickerServer.userDataPath, fileName);
+            //await Utilities.EnsureFileExists(filePath, INDEX_URL);
+
+            if (File.Exists(filePath))
+            {
+                var pageContent = File.ReadAllBytes(filePath);
+                SendResponse(response, System.Text.Encoding.UTF8.GetString(pageContent), statusCode: 200, contentType: "text/html");
+            }
+            else
+            {
+                SendResponse(response, "Page not found.", statusCode: 404);
+            }
+        }
+
+        private async System.Threading.Tasks.Task ServeFrontEnd(HttpListenerResponse response, string fileName)
         {
             var filePath = Path.Combine(WickerServer.resourcesPath, fileName);
             await Utilities.EnsureFileExists(filePath, INDEX_URL);
