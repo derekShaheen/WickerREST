@@ -23,7 +23,7 @@ namespace WickerREST
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         private const string COMMANDS_PATH = "/commands";
-        private const string GAME_VARIABLES_PATH = "/game-variables";
+        private const string HEARTBEAT_PATH = "/heartbeat";
         private const string FAVICON_PATH = "/favicon.ico";
         private const string INDEX_URL = @"https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/index.html";
         private const string FAVICON_URL = @"https://raw.githubusercontent.com/derekShaheen/WickerREST/main/web/resources/favicon.ico";
@@ -120,24 +120,9 @@ namespace WickerREST
                         {
                             ServeCommandHandlers(response);
                         }
-                        else if (request.Url.AbsolutePath == GAME_VARIABLES_PATH)
+                        else if (request.Url.AbsolutePath == HEARTBEAT_PATH)
                         {
-                            if (Commands.Instance.GameVariableMethods != null && Commands.Instance.GameVariableMethods.Count > 0)
-                            {
-
-                                var variableValues = Commands.Instance.GameVariableMethods.Select(kvp => new
-                                {
-                                    VariableName = kvp.Key,
-                                    Value = kvp.Value?.Invoke()?.ToString()
-                                }).ToDictionary(kvp => kvp.VariableName, kvp => kvp.Value);
-
-                                var json = JsonConvert.SerializeObject(variableValues);
-                                SendResponse(response, json, statusCode: 200, contentType: "application/json");
-                            }
-                            else
-                            {
-                                SendResponse(response, "No game variables found.", statusCode: 200);
-                            }
+                            ServeHeartbeat(response);
                         }
                         else
                         {
@@ -159,6 +144,26 @@ namespace WickerREST
                 {
                     //User is trying to close the server improperly. Suppress here, handle on application quit.
                 }
+            }
+        }
+
+        private void ServeHeartbeat(HttpListenerResponse response)
+        {
+            if (Commands.Instance.GameVariableMethods != null && Commands.Instance.GameVariableMethods.Count > 0)
+            {
+
+                var variableValues = Commands.Instance.GameVariableMethods.Select(kvp => new
+                {
+                    VariableName = kvp.Key,
+                    Value = kvp.Value?.Invoke()?.ToString()
+                }).ToDictionary(kvp => kvp.VariableName, kvp => kvp.Value);
+
+                var json = JsonConvert.SerializeObject(variableValues);
+                SendResponse(response, json, statusCode: 200, contentType: "application/json");
+            }
+            else
+            {
+                SendResponse(response, "No game variables found.", statusCode: 200);
             }
         }
 

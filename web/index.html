@@ -342,13 +342,13 @@
         let serverAvailable = true;
         let prevGameVariables = {};
 
-        function fetchGameVariables() {
+        function fetchHeartbeat() {
             if (!serverAvailable) {
                 // Attempt to fetch only if the previous flag indicates the server might be available
                 return;
             }
 
-            fetch('/game-variables')
+            fetch('/heartbeat')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -447,13 +447,13 @@
                         errorLogged = true; // Log the error once
                     }
                     // Implement a retry logic after a delay
-                    setTimeout(fetchGameVariables, 5000); // Retry after 5 seconds
+                    setTimeout(fetchHeartbeat, 5000); // Retry after 5 seconds
                 });
         }
 
         // Poll game variables
-        fetchGameVariables();
-        setInterval(fetchGameVariables, 2000);
+        fetchHeartbeat();
+        setInterval(fetchHeartbeat, 2000);
 
         function updateConnectionStatus(isConnected) {
             const statusElement = document.getElementById('connectionStatus');
@@ -582,7 +582,7 @@
         document.getElementById('columnControlInput').addEventListener('change', function () {
             const columnCount = this.value;
             document.cookie = "SameSite=Lax; columnCount=" + columnCount + "; Path=/; max-age=31536000"; // Expires after 1 year
-            fetchGameVariables();
+            fetchHeartbeat();
         });
 
     </script>
