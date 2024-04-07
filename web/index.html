@@ -560,7 +560,8 @@
                     // Right-click event to display command description
                     button.addEventListener('contextmenu', (e) => {
                         e.preventDefault(); // Prevent default context menu
-                        displayCommandDescription(titleizedCmd, cmd.Description); // Display the description
+                        //displayCommandDescription(titleizedCmd, cmd.Description); // Display the description
+                        displayResponse('[Server]', '', `(${titleizedCmd})  ${cmd.Description || 'No description has been provided for this command.'}`);
                     });
 
                     col.appendChild(button);
