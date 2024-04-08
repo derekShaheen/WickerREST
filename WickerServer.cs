@@ -1,7 +1,6 @@
 ﻿using MelonLoader;
 using MelonLoader.Utils;
 using System.Net;
-using WickerREST;
 
 namespace WickerREST
 {
@@ -10,7 +9,7 @@ namespace WickerREST
         public const string Name = "WickerREST";
         public const string Description = "WickerREST";
         public const string Author = "Skrip";
-        public const string Version = "0.95.1";
+        public const string Version = "0.95.2";
         public const string DownloadLink = "";
     }
 
