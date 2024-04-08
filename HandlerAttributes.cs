@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Wicker
+namespace WickerREST
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class CommandHandlerAttribute : Attribute

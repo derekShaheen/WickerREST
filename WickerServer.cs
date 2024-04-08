@@ -1,9 +1,9 @@
 ﻿using MelonLoader;
 using MelonLoader.Utils;
 using System.Net;
-using Wicker;
+using WickerREST;
 
-namespace Wicker
+namespace WickerREST
 {
     public static class BuildInfo
     {

@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Wicker;
-
-namespace Wicker
+﻿namespace WickerREST
 {
     internal static class Utilities
     {

@@ -3,9 +3,8 @@ using System.Net;
 using System.Reflection;
 using System.Web;
 using UnityEngine;
-using Wicker;
 
-namespace Wicker
+namespace WickerREST
 {
     public class WickerNetwork
     {
