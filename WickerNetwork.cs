@@ -1,18 +1,9 @@
-﻿using MelonLoader;
-using MelonLoader.Utils;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Newtonsoft.Json;
 using System.Net;
 using System.Reflection;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Web;
 using UnityEngine;
 using Wicker;
-using static MelonLoader.MelonLogger;
 
 namespace WickerREST
 {
