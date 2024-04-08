@@ -170,6 +170,7 @@
                         loadingSpinner.parentElement.removeChild(loadingSpinner);
                     }
 
+                    //displayResponse("[Server]", "Heartbeat", "Connection established with server.")
                     createCommandButtons(data.commands);
 
                     // Set header
@@ -452,6 +453,7 @@
                         document.getElementById('gameVariables').innerHTML = '';
                         document.getElementById('gameVariables').style.display = 'none';
                         document.getElementById('flashCheck').style.display = 'none';
+                        displayResponse("[Server]", "Heartbeat", "Lost connection to server.")
                         errorLogged = true; // Log the error once
                     }
                     // Implement a retry logic after a delay
@@ -471,12 +473,10 @@
             if (isConnected) {
                 statusElement.textContent = "Telemetry Active";
                 statusElement.className = "text-success"; // Use Bootstrap class for styling
-                displayResponse("[Server]", "Heartbeat", "Connection established with server.")
             }
             else {
                 statusElement.textContent = ""//"Telemetry Lost";
                 statusElement.className = "text-danger"; // Use Bootstrap class for styling
-                displayResponse("[Server]", "Heartbeat", "Lost connection to server.")
             }
         }
 
