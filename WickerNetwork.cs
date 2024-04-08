@@ -5,7 +5,7 @@ using System.Web;
 using UnityEngine;
 using Wicker;
 
-namespace WickerREST
+namespace Wicker
 {
     public class WickerNetwork
     {

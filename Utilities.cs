@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Wicker;
 
-namespace WickerREST
+namespace Wicker
 {
     internal static class Utilities
     {

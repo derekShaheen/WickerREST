@@ -1,7 +1,7 @@
 ﻿using MelonLoader;
 using MelonLoader.Utils;
 using System.Net;
-using WickerREST;
+using Wicker;
 
 namespace Wicker
 {
